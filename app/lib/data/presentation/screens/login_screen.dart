@@ -1,14 +1,15 @@
 import "package:app/common/widgets/custom_button.dart";
 import "package:flutter/material.dart";
 import "package:go_router/go_router.dart";
-import "package:app/data/presentation/widgets/registration/registration_form.dart";
+import "package:app/data/presentation/widgets/login/login_form.dart";
+import "package:app/common/widgets/custom_divider.dart";
 
-class InputBoxExample extends StatefulWidget {
+class LoginWidget extends StatefulWidget {
   @override
-  RegistrationScreen createState() => RegistrationScreen();
+  LoginScreen createState() => LoginScreen();
 }
 
-class RegistrationScreen extends State<InputBoxExample> {
+class LoginScreen extends State<LoginWidget> {
   final TextEditingController _textController = TextEditingController();
 
   @override
@@ -35,37 +36,46 @@ class RegistrationScreen extends State<InputBoxExample> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Sign Up",
+              "Welcome Back",
               textAlign: TextAlign.left,
               style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
             ),
-            Text("Create an account"),
+            Text("Sign up your account"),
             const SizedBox(height: 40),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [RegistrationForm()],
+              children: [LoginForm()],
             ),
             const SizedBox(height: 20),
             CustomButton(
               onPressed: () {
-                context.go('/login');
+                context.go('/');
               },
 
-              text: "Register 2",
+              text: "Login",
             ),
             const SizedBox(height: 40),
             SizedBox(
               height: 20,
-              child: Center(child: Text("Have an account? Sign In")),
+              child: Center(child: Text("Don't have an account? Sign Up")),
             ),
-            const SizedBox(height: 60),
-            SizedBox(
-              height: 20,
-              child: Center(child: Text("By signing up, you agree to our ")),
+            const SizedBox(height: 20),
+            DividerExample(),
+            const SizedBox(height: 20),
+            CustomButton(
+              onPressed: () {
+                context.go('/second');
+              },
+
+              text: "Sign in with google",
             ),
-            SizedBox(
-              height: 20,
-              child: Center(child: Text("Terms and Privacy Policy.")),
+            const SizedBox(height: 10),
+            CustomButton(
+              onPressed: () {
+                context.go('/second');
+              },
+
+              text: "Sign in with facebook",
             ),
           ],
         ),
