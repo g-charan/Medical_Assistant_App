@@ -1,5 +1,4 @@
-import 'package:app/data/routing/app_routes.dart';
-
+import 'package:app/data/routing/route_generator.dart';
 import 'package:flutter/material.dart';
 
 void main() {
