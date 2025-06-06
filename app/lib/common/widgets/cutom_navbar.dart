@@ -9,7 +9,7 @@ class CustomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(right: 20),
+      padding: EdgeInsets.only(right: 10, left: 0),
       margin: EdgeInsets.only(top: 10),
       decoration: BoxDecoration(
         color: Colors.grey[200],
@@ -24,7 +24,9 @@ class CustomNavBar extends StatelessWidget {
             },
             icon: Icon(Icons.menu),
           ),
-          Text(title, style: TextStyle(fontSize: 16)),
+
+          Text(title, style: TextStyle(fontSize: 18)),
+
           Icon(Icons.search),
         ],
       ),

@@ -1,23 +1,30 @@
+import 'package:app/data/presentation/widgets/family/family_card.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class FamilyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(0),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text('This is the Home Screen'),
-              ElevatedButton(
-                onPressed: () {
-                  context.go('/second');
-                },
-                child: Text('Go to Second Screen'),
-              ),
+        padding: EdgeInsets.all(20),
+        child: SizedBox(
+          height: screenHeight,
+          child: ListView(
+            scrollDirection: Axis.vertical,
+            children: [
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
+              FamilyCard(),
             ],
           ),
         ),

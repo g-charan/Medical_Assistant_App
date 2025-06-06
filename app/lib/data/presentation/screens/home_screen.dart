@@ -1,5 +1,9 @@
+import 'package:app/data/presentation/widgets/family/family_list.dart';
+import 'package:app/data/presentation/widgets/goals/goals_list.dart';
+import 'package:app/data/presentation/widgets/calendar/calendar_slide.dart';
+import 'package:app/data/presentation/widgets/alerts/upcoming_alerts.dart';
+import 'package:app/data/presentation/widgets/medicine/upcoming_medicine.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 void _showAlertDialog(BuildContext context) {
   showDialog(
@@ -39,55 +43,17 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 SizedBox(
                   // PageView also needs a finite height
-                  height: 60.0,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal, // <--- Key property
-                    children: <Widget>[
-                      _buildPage(Colors.grey, 'Page 1'),
-                      _buildPage(Colors.grey, 'Page 2'),
-                      _buildPage(Colors.grey, 'Page 3'),
-                      _buildPage(Colors.grey, 'Page 1'),
-                      _buildPage(Colors.grey, 'Page 2'),
-                      _buildPage(Colors.grey, 'Page 3'),
-                    ],
-                  ),
+                  height: 50.0,
+                  child: CalendarSlide(), // Using the CalendarSlide widget
                 ),
                 const SizedBox(height: 20),
-                Text("Upcoming Medicine"),
-                SizedBox(
-                  height: 60,
-                  child: ListView(
-                    scrollDirection: Axis.vertical,
-                    children: <Widget>[_buildList(Colors.grey, "Something")],
-                  ),
-                ),
+                UpcomingMedicine(),
                 const SizedBox(height: 20),
-                Text("Goals"),
-                SizedBox(
-                  height: 60,
-                  child: ListView(
-                    scrollDirection: Axis.vertical,
-                    children: <Widget>[_buildList(Colors.grey, "Something")],
-                  ),
-                ),
+                GoalsList(),
                 const SizedBox(height: 20),
-                Text("Upcoming Alerts"),
-                SizedBox(
-                  height: 60,
-                  child: ListView(
-                    scrollDirection: Axis.vertical,
-                    children: <Widget>[_buildList(Colors.grey, "Something")],
-                  ),
-                ),
+                UpcomingAlerts(),
                 const SizedBox(height: 20),
-                Text("Family"),
-                SizedBox(
-                  height: 60,
-                  child: ListView(
-                    scrollDirection: Axis.vertical,
-                    children: <Widget>[_buildList(Colors.grey, "Something")],
-                  ),
-                ),
+                FamilyList(),
               ],
             ),
 
@@ -107,40 +73,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPage(Color color, String text) {
-    return Container(
-      width: 60,
-      margin: const EdgeInsets.only(
-        left: 10,
-        right: 10,
-      ), // Margin around each page
-      color: color,
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 11.0, color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildList(Color color, String text) {
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.only(
-        top: 10,
-        bottom: 10,
-      ), // Margin around each page
-      color: color,
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 11.0, color: Colors.white),
         ),
       ),
     );

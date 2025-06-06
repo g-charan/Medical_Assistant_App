@@ -19,6 +19,8 @@ class AppShell extends StatelessWidget {
         appRouteTitles[state.fullPath ?? state.uri.path] ?? 'App';
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        scrolledUnderElevation: 0.0,
         // The CustomNavBar will likely handle opening the drawer
         // If CustomNavBar implicitly creates a leading icon for a Drawer,
         // you might still want automaticallyImplyLeading: false here if you want to control it from CustomNavBar.

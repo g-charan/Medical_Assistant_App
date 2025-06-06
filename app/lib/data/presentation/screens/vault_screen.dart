@@ -1,3 +1,6 @@
+import 'package:app/common/widgets/custom_list.dart';
+import 'package:app/data/presentation/widgets/family/family_list.dart';
+import 'package:app/data/presentation/widgets/vault/vault_medicines.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,18 +9,15 @@ class VaultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(0),
+        padding: EdgeInsets.all(20),
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('This is the Home Screen'),
-              ElevatedButton(
-                onPressed: () {
-                  context.go('/second');
-                },
-                child: Text('Go to Second Screen'),
-              ),
+              VaultMedicines(),
+              const SizedBox(height: 40),
+              FamilyList(),
             ],
           ),
         ),
