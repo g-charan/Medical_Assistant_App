@@ -5,7 +5,7 @@ class GoalsList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Upcoming Medicine"),
+        Text("Goals"),
         SizedBox(
           height: 60,
           child: ListView(

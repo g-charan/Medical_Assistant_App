@@ -25,7 +25,10 @@ class CustomNavBar extends StatelessWidget {
             icon: Icon(Icons.menu),
           ),
 
-          Text(title, style: TextStyle(fontSize: 18)),
+          Text(
+            title,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          ),
 
           Icon(Icons.search),
         ],

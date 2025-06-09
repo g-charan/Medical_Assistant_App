@@ -35,25 +35,33 @@ class HomeScreen extends StatelessWidget {
         padding: EdgeInsets.only(left: 20, right: 20, top: 20),
         child: Stack(
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            ListView(
+              scrollDirection: Axis.vertical,
               children: [
-                Text("Hello There!! Charan", style: TextStyle(fontSize: 32)),
-                const SizedBox(height: 10),
-                SizedBox(
-                  // PageView also needs a finite height
-                  height: 50.0,
-                  child: CalendarSlide(), // Using the CalendarSlide widget
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Hello There!! Charan",
+                      style: TextStyle(fontSize: 32),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      // PageView also needs a finite height
+                      height: 50.0,
+                      child: CalendarSlide(), // Using the CalendarSlide widget
+                    ),
+                    const SizedBox(height: 20),
+                    UpcomingMedicine(),
+                    const SizedBox(height: 20),
+                    GoalsList(),
+                    const SizedBox(height: 20),
+                    UpcomingAlerts(),
+                    const SizedBox(height: 20),
+                    FamilyList(),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                UpcomingMedicine(),
-                const SizedBox(height: 20),
-                GoalsList(),
-                const SizedBox(height: 20),
-                UpcomingAlerts(),
-                const SizedBox(height: 20),
-                FamilyList(),
               ],
             ),
 
@@ -78,3 +86,5 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
+// --- The Custom Styled Accordion Widget ---

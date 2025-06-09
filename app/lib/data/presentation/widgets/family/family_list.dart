@@ -5,13 +5,12 @@ class FamilyList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Upcoming Medicine"),
-        SizedBox(
-          height: 60,
-          child: ListView(
-            scrollDirection: Axis.vertical,
-            children: <Widget>[_buildList(Colors.grey, "Something")],
-          ),
+        Text("Family Members"),
+        Column(
+          children: [
+            _buildList(Colors.grey, "Something"),
+            _buildList(Colors.grey, "Something"),
+          ],
         ),
       ],
     );
@@ -21,11 +20,11 @@ class FamilyList extends StatelessWidget {
 Widget _buildList(Color color, String text) {
   return Container(
     height: 50,
-    margin: const EdgeInsets.only(top: 5, bottom: 5),
+
     decoration: BoxDecoration(
-      color: Colors.grey[200],
+      color: Colors.transparent,
       border: Border.symmetric(
-        horizontal: BorderSide(color: Colors.grey.shade400),
+        horizontal: BorderSide(color: Colors.transparent),
       ),
     ), // Margin around each page
 
@@ -41,7 +40,7 @@ Widget _buildList(Color color, String text) {
             ),
             child: Padding(
               padding: EdgeInsets.all(5),
-              child: Icon(Icons.medication),
+              child: Icon(Icons.person),
             ),
           ),
           const SizedBox(width: 8),
@@ -49,9 +48,9 @@ Widget _buildList(Color color, String text) {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text("Vitamin d3 1100"),
+              Text("Jayasree Gutti"),
               Text(
-                "Should be taken after food",
+                "last updated 2 days ago",
                 style: TextStyle(fontSize: 11, height: 1),
               ),
             ],

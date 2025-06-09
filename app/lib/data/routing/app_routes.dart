@@ -1,6 +1,9 @@
+import 'package:app/data/presentation/screens/alerts_screen.dart';
 import 'package:app/data/presentation/screens/artificial_intelligence_screen.dart';
+import 'package:app/data/presentation/screens/family_details_screen.dart';
 import 'package:app/data/presentation/screens/family_screen.dart';
 import 'package:app/data/presentation/screens/login_screen.dart';
+import 'package:app/data/presentation/screens/medicine_details_screen.dart';
 import 'package:app/data/presentation/screens/metrics_screen.dart';
 import 'package:app/data/presentation/screens/settings_screen.dart';
 import 'package:app/data/presentation/screens/vault_screen.dart';
@@ -29,6 +32,7 @@ const Map<String, String> appRouteTitles = {
   '/family': 'Family',
   '/settings': 'Settings', // Example
   '/profile': 'Profile', // Example
+  '/alerts': 'Alerts',
   // Add titles for all your main routes here
 };
 
@@ -81,6 +85,32 @@ final List<AppRouteConfig> appRouteConfigs = [
     path: '/settings', // Example of adding another route
     builder: (BuildContext context, GoRouterState state) {
       return SettingsScreen();
+    },
+  ),
+  AppRouteConfig(
+    path: '/vault/:medicineId',
+    usesShell: false,
+    builder: (BuildContext context, GoRouterState state) {
+      // Extract the medicineId from the state parameters
+      final String? medicineId = state.pathParameters['medicineId'];
+      // You can use the medicineId to fetch details or pass it to the screen
+      return MedicineDetailsScreen(medicineId: "$medicineId");
+    },
+  ),
+  AppRouteConfig(
+    path: '/family/:familyId',
+    usesShell: false,
+    builder: (BuildContext context, GoRouterState state) {
+      // Extract the familyId from the state parameters
+      final String? familyId = state.pathParameters['familyId'];
+      // You can use the familyId to fetch details or pass it to the screen
+      return FamilyDetailsScreen(familyMemberId: "$familyId");
+    },
+  ),
+  AppRouteConfig(
+    path: "/alerts",
+    builder: (BuildContext context, GoRouterState state) {
+      return AlertsScreen();
     },
   ),
 ];

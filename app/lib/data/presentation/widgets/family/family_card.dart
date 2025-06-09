@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class FamilyCard extends StatelessWidget {
   @override
@@ -46,6 +47,7 @@ class FamilyCard extends StatelessWidget {
                   IconButton(
                     icon: Icon(Icons.arrow_right_alt, size: 16),
                     onPressed: () {
+                      context.go("/family/2");
                       // Navigate to family details screen
                       // context.push('/family/details');
                     },

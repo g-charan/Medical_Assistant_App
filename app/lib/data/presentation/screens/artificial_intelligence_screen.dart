@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class ArtificialIntelligenceScreen extends StatelessWidget {
   final TextEditingController _textController = TextEditingController();
@@ -37,9 +36,23 @@ class ArtificialIntelligenceScreen extends StatelessWidget {
               child: TextField(
                 // <--- No need for SizedBox here, Positioned constrains width
                 controller: _textController,
+
                 style: const TextStyle(fontSize: 14.0, color: Colors.black87),
                 decoration: InputDecoration(
                   hintText: "Ask anything here",
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.grey),
+                    onPressed: () {
+                      // Handle send action
+                      String text = _textController.text.trim();
+                      if (text.isNotEmpty) {
+                        // Process the input text
+                        print("User input: $text");
+                        _textController
+                            .clear(); // Clear the input field after sending
+                      }
+                    },
+                  ),
                   hintStyle: TextStyle(color: Colors.grey[600]),
                   border: InputBorder.none,
                   focusedBorder: InputBorder.none,

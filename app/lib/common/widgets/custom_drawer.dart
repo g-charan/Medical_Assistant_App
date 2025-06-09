@@ -21,6 +21,7 @@ const List<DrawerItem> drawerItems = [
   DrawerItem(icon: Icons.info, title: 'Family', route: '/family'),
   DrawerItem(icon: Icons.info, title: 'AI', route: '/ai'),
   DrawerItem(icon: Icons.info, title: 'Metrics', route: '/metrics'),
+  DrawerItem(icon: Icons.info, title: 'Alerts', route: '/alerts'),
 
   DrawerItem(
     icon: Icons.settings,

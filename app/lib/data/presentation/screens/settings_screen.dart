@@ -1,4 +1,3 @@
-import 'package:app/common/widgets/custom_list.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -27,7 +26,7 @@ class SettingsScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Charan Kumar", style: TextStyle(fontSize: 14)),
+                          Text("Charan Gutti", style: TextStyle(fontSize: 14)),
                           Text(
                             "charan.gutti@gmail.com",
                             style: TextStyle(fontSize: 12),

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 class UpcomingAlerts extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Upcoming Medicine"),
+        Text("Upcoming Alerts"),
         SizedBox(
           height: 60,
           child: ListView(

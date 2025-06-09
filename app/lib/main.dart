@@ -14,6 +14,12 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       title: 'Flutter Routing Demo',
+      theme: ThemeData(
+        fontFamily: 'Manrope',
+        textTheme: TextTheme(
+          bodyMedium: TextStyle(fontWeight: FontWeight.w500),
+        ),
+      ),
     );
   }
 }
