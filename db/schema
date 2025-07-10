@@ -1,0 +1,83 @@
+-- Enable UUID support
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Users Table
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    phone TEXT UNIQUE,
+    password_hash TEXT NOT NULL,
+    gender TEXT,
+    date_of_birth DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Relationships between users (e.g. parent, child, etc.)
+CREATE TABLE user_relationships (
+    relationship_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    related_user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    relation TEXT NOT NULL,               -- e.g. father, mother, sibling
+    permission TEXT NOT NULL DEFAULT 'viewer',  -- viewer | editor | full_access
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, related_user_id)      -- prevent duplicate links
+);
+
+-- Master table of all medicines (central database)
+CREATE TABLE medicines (
+    medicine_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    generic_name TEXT,
+    manufacturer TEXT,
+    usage TEXT,
+    dosage TEXT,
+    side_effects TEXT,
+    interactions TEXT,
+    precautions TEXT,
+    storage TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Medicines assigned to a user (their vault)
+CREATE TABLE user_medicines (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    medicine_id UUID NOT NULL REFERENCES medicines(medicine_id),
+    start_date DATE,
+    end_date DATE,
+    notes TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Reminders for taking medicine
+CREATE TABLE reminders (
+    reminder_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    user_medicine_id UUID NOT NULL REFERENCES user_medicines(id) ON DELETE CASCADE,
+    time TIME NOT NULL,
+    repeat_pattern TEXT,   -- daily, weekly, etc.
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Health metrics logs
+CREATE TABLE health_metrics (
+    metric_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    metric_type TEXT NOT NULL,  -- e.g., blood_pressure, glucose
+    value TEXT NOT NULL,
+    unit TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Health files and prescriptions
+CREATE TABLE files (
+    file_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    file_url TEXT NOT NULL,
+    file_type TEXT,           -- e.g., 'pdf', 'image', 'lab_report'
+    description TEXT,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
