@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // Assuming GoRouter for navigation
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // Import for animations
 
 class FamilyDetailsScreen extends StatefulWidget {
   final String
@@ -220,22 +221,33 @@ class _FamilyDetailsScreenState extends State<FamilyDetailsScreen> {
             const SizedBox(height: 10),
             SizedBox(
               height: 100, // Fixed height for horizontal cards
-              child: PageView.builder(
-                controller: _healthMetricsPageController,
-                itemCount: healthLogs.length,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentHealthMetricPageIndex = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  final log = healthLogs[index];
-                  return _buildHealthMetricCard(
-                    log['type']!,
-                    log['value']!,
-                    log['date']!,
-                  );
-                },
+              child: AnimationLimiter(
+                child: PageView.builder(
+                  controller: _healthMetricsPageController,
+                  itemCount: healthLogs.length,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentHealthMetricPageIndex = index;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    final log = healthLogs[index];
+                    return AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 375),
+                      child: SlideAnimation(
+                        horizontalOffset: 50.0, // Animate horizontally
+                        child: FadeInAnimation(
+                          child: _buildHealthMetricCard(
+                            log['type']!,
+                            log['value']!,
+                            log['date']!,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             // Page indicator for Health Metrics (circles only)
@@ -251,34 +263,75 @@ class _FamilyDetailsScreenState extends State<FamilyDetailsScreen> {
               height:
                   _medicinesPerPage *
                   54.0, // 50 (item height) + 2*2 (margin) = 54 per item
-              child: PageView.builder(
-                controller: _medicinesVaultPageController,
-                itemCount: _numMedicineVaultPages,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentMedicineVaultPageIndex = index;
-                  });
-                },
-                itemBuilder: (context, pageIndex) {
-                  final int startIndex = pageIndex * _medicinesPerPage;
-                  final int endIndex = (startIndex + _medicinesPerPage).clamp(
-                    0,
-                    medicines.length,
-                  );
-                  final List<Map<String, String>> currentMedicines = medicines
-                      .sublist(startIndex, endIndex);
+              child: AnimationLimiter(
+                child: PageView.builder(
+                  controller: _medicinesVaultPageController,
+                  itemCount: _numMedicineVaultPages,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentMedicineVaultPageIndex = index;
+                    });
+                  },
+                  itemBuilder: (context, pageIndex) {
+                    final int startIndex = pageIndex * _medicinesPerPage;
+                    final int endIndex = (startIndex + _medicinesPerPage).clamp(
+                      0,
+                      medicines.length,
+                    );
+                    final List<Map<String, String>> currentMedicines = medicines
+                        .sublist(startIndex, endIndex);
 
-                  return Column(
-                    children: currentMedicines.map((medicine) {
-                      return _buildMedicineVaultItem(
-                        context,
-                        medicine['name']!,
-                        medicine['instructions']!,
-                        medicine['medicineId']!,
-                      );
-                    }).toList(),
-                  );
-                },
+                    return KeyedSubtree(
+                      key: ValueKey(
+                        pageIndex,
+                      ), // Important: Force rebuild when pageIndex changes
+                      child: AnimatedSwitcher(
+                        duration: const Duration(
+                          milliseconds: 400,
+                        ), // Duration for the page transition
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) {
+                              // Combine Fade and Slide for a nice page entry effect
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(
+                                      1.0,
+                                      0.0,
+                                    ), // Start from right
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              );
+                            },
+                        child: Column(
+                          // This is the content that AnimatedSwitcher will transition
+                          key: ValueKey(
+                            'medicinesPage_$pageIndex',
+                          ), // **FIXED**: Unique key for Column per page
+                          children: AnimationConfiguration.toStaggeredList(
+                            // Stagger from the top of the new page
+                            duration: const Duration(milliseconds: 375),
+                            childAnimationBuilder: (widget) => SlideAnimation(
+                              verticalOffset: 50.0,
+                              child: FadeInAnimation(child: widget),
+                            ),
+                            children: currentMedicines.map((medicine) {
+                              return _buildMedicineVaultItem(
+                                context,
+                                medicine['name']!,
+                                medicine['instructions']!,
+                                medicine['medicineId']!,
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             // Page indicator for Medicines Vault (numbers with arrows)
@@ -291,30 +344,48 @@ class _FamilyDetailsScreenState extends State<FamilyDetailsScreen> {
             // --- Medication Log Section: Taken/Missed Medicines ---
             _buildSectionTitle('Medication Log'),
             const SizedBox(height: 10),
-            Column(
-              children: medicationStatusLog.map((log) {
-                return _buildMedicationStatusItem(
-                  context,
-                  log['medicine']!,
-                  log['date']!,
-                  log['time']!,
-                  log['status']!,
-                );
-              }).toList(),
+            AnimationLimiter(
+              child: Column(
+                children: AnimationConfiguration.toStaggeredList(
+                  duration: const Duration(milliseconds: 375),
+                  childAnimationBuilder: (widget) => SlideAnimation(
+                    verticalOffset: 50.0,
+                    child: FadeInAnimation(child: widget),
+                  ),
+                  children: medicationStatusLog.map((log) {
+                    return _buildMedicationStatusItem(
+                      context,
+                      log['medicine']!,
+                      log['date']!,
+                      log['time']!,
+                      log['status']!,
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
             const SizedBox(height: 20), // Spacing at bottom
             // --- Medical Reports Section ---
             _buildSectionTitle('Medical Reports'),
             const SizedBox(height: 10),
-            Column(
-              children: medicalReports.map((report) {
-                return _buildMedicalReportItem(
-                  context,
-                  report['name']!,
-                  report['type']!,
-                  report['reportId']!,
-                );
-              }).toList(),
+            AnimationLimiter(
+              child: Column(
+                children: AnimationConfiguration.toStaggeredList(
+                  duration: const Duration(milliseconds: 375),
+                  childAnimationBuilder: (widget) => SlideAnimation(
+                    verticalOffset: 50.0,
+                    child: FadeInAnimation(child: widget),
+                  ),
+                  children: medicalReports.map((report) {
+                    return _buildMedicalReportItem(
+                      context,
+                      report['name']!,
+                      report['type']!,
+                      report['reportId']!,
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
             const SizedBox(height: 20), // Spacing at bottom
           ],
@@ -600,7 +671,11 @@ class _FamilyDetailsScreenState extends State<FamilyDetailsScreen> {
             ),
             // Optional: Add an action button here (e.g., info, reschedule)
             IconButton(
-              icon: Icon(Icons.info_outline, color: Colors.black54, size: 20),
+              icon: const Icon(
+                Icons.info_outline,
+                color: Colors.black54,
+                size: 20,
+              ),
               onPressed: () {
                 // Handle tapping for more details or actions
                 print('Tapped on $medicineName status log for more info.');

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-// Your provided CustomStyledAccordion widget, adapted for super-compact view
 import 'package:app/data/presentation/widgets/alerts/custom_accordion.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class AlertsScreen extends StatelessWidget {
   const AlertsScreen({super.key});
@@ -302,6 +301,7 @@ class _AlertsPageStyledState extends State<AlertsPageStyled> {
                 // Handle Add Custom Alert tap
               },
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -323,10 +323,14 @@ class _AlertsPageStyledState extends State<AlertsPageStyled> {
   }) {
     final int totalPages = _calculateTotalPages(alerts);
 
-    // Adjusted height calculation based on _alertsPerPage and CustomStyledAccordion header height (50 + 2*2 margin = 54 effective height per item)
-    final double basePageHeight = _alertsPerPage * 44.0;
-    final double expansionBuffer = 80.0; // Increased buffer for expansion
-    final double categoryHeight = basePageHeight + expansionBuffer;
+    // Calculate height based on the number of alerts per page,
+    // plus a small fixed buffer for potential expansion.
+    // Each CustomStyledAccordion has a headerHeight of 50.0 + 2*2 margin = 54.0 total vertical space.
+    // We want the SizedBox to be just tall enough for _alertsPerPage items.
+    final double minPageHeight = _alertsPerPage * 54.0;
+    // Add a small buffer for smooth animation when an accordion expands,
+    // but not so much that it creates a huge empty space when collapsed.
+    final double expansionBuffer = 20.0; // Reduced from 80.0 to 20.0
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,8 +346,15 @@ class _AlertsPageStyledState extends State<AlertsPageStyled> {
             ),
           ),
         ),
-        SizedBox(
-          height: categoryHeight,
+        // Use a ConstrainedBox with minimum height to prevent excessive space
+        // when there are fewer than _alertsPerPage items.
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: minPageHeight, // Minimum height for 5 items
+            maxHeight:
+                minPageHeight +
+                expansionBuffer, // Max height allows a bit of expansion
+          ),
           child: PageView.builder(
             controller: pageController,
             itemCount: totalPages,
@@ -359,21 +370,29 @@ class _AlertsPageStyledState extends State<AlertsPageStyled> {
                 endIndex,
               );
 
-              return SingleChildScrollView(
+              return AnimationLimiter(
                 child: Column(
-                  children: currentAlerts.map((alert) {
-                    return CustomStyledAccordion(
-                      medicineName: medicineNameBuilder(alert),
-                      medicineDetails: medicineDetailsBuilder(alert),
-                      expandedContent: expandedContentBuilder(alert),
-                      leadingWidget: leadingWidgetBuilder(alert),
-                      actionText: actionTextBuilder(alert),
-                      onActionPressed: () {
-                        // Handle action tap
-                      },
-                      headerHeight: 50.0, // Match the new standard height
-                    );
-                  }).toList(),
+                  // Removed SingleChildScrollView here
+                  children: AnimationConfiguration.toStaggeredList(
+                    duration: const Duration(milliseconds: 375),
+                    childAnimationBuilder: (widget) => SlideAnimation(
+                      verticalOffset: 50.0,
+                      child: FadeInAnimation(child: widget),
+                    ),
+                    children: currentAlerts.map((alert) {
+                      return CustomStyledAccordion(
+                        medicineName: medicineNameBuilder(alert),
+                        medicineDetails: medicineDetailsBuilder(alert),
+                        expandedContent: expandedContentBuilder(alert),
+                        leadingWidget: leadingWidgetBuilder(alert),
+                        actionText: actionTextBuilder(alert),
+                        onActionPressed: () {
+                          // Handle action tap
+                        },
+                        headerHeight: 50.0,
+                      );
+                    }).toList(),
+                  ),
                 ),
               );
             },
@@ -402,29 +421,26 @@ class _AlertsPageStyledState extends State<AlertsPageStyled> {
         border: Border.symmetric(
           horizontal: BorderSide(color: Colors.grey.shade400),
         ),
-        // Removed borderRadius to make it square
       ),
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(5), // Match _buildList2 padding
+          padding: const EdgeInsets.all(5),
           child: Row(
             children: [
-              const SizedBox(width: 4), // Match _buildList2 spacing
+              const SizedBox(width: 4),
               Container(
-                decoration: const BoxDecoration(
-                  // Removed borderRadius here as well
-                  color: Colors
-                      .grey, // Consistent grey color for the icon background
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(
-                    5,
-                  ), // Match _buildList2 icon padding
-                  child: Icon(icon, color: Colors.white, size: 20),
+                decoration: const BoxDecoration(color: Colors.grey),
+                child: const Padding(
+                  padding: EdgeInsets.all(5),
+                  child: Icon(
+                    Icons.add_alert_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ), // Made const
                 ),
               ),
-              const SizedBox(width: 8), // Match _buildList2 spacing
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
