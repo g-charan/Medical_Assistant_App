@@ -1,13 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/data/presentation/widgets/medicine/custom_accordion.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // Import the package
+
 // Re-using the CustomStyledAccordion from the previous example for consistent styling
 
-class MedicineDetailsScreen extends StatelessWidget {
+class MedicineDetailsScreen extends StatefulWidget {
   final String
   medicineId; // This can be used to fetch actual data in a real app
 
   const MedicineDetailsScreen({super.key, required this.medicineId});
+
+  @override
+  State<MedicineDetailsScreen> createState() => _MedicineDetailsScreenState();
+}
+
+class _MedicineDetailsScreenState extends State<MedicineDetailsScreen>
+    with SingleTickerProviderStateMixin {
+  // We need a TickerProvider for the AnimationLimiter if we want to manually control it,
+  // but for simple staggered animations with ListView, AnimationLimiter handles it internally.
+  // Still, keeping the TickerProvider for consistency and potential future custom animations.
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        milliseconds: 1000,
+      ), // Overall animation duration
+    );
+    // You can start the animation here if you want it to play once on screen load
+    // _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   // Helper to build the content for the CustomStyledAccordion (elderly-friendly)
   Widget _buildElderlyFriendlyContent(List<String> points) {
@@ -18,11 +50,11 @@ class MedicineDetailsScreen extends StatelessWidget {
         List<TextSpan> spans = [];
         final RegExp boldRegex = RegExp(r'\*\*(.*?)\*\*'); // Matches **text**
 
-        // Handle nested bullet points (e.g., '  •  ')
-        bool isNestedBullet = point.startsWith('  •  ');
+        // Handle nested bullet points (e.g., '  •  ')
+        bool isNestedBullet = point.startsWith('   •   ');
         String processedPoint = isNestedBullet
             ? point.substring(3)
-            : point; // Remove initial '  •  ' for parsing
+            : point; // Remove initial '   •   ' for parsing
 
         int lastMatchEnd = 0;
         for (RegExpMatch match in boldRegex.allMatches(processedPoint)) {
@@ -68,7 +100,7 @@ class MedicineDetailsScreen extends StatelessWidget {
             children: [
               if (!isNestedBullet) // Add bullet for top-level points only
                 const Text(
-                  '•  ',
+                  '•   ',
                   style: TextStyle(
                     fontSize: 15.0,
                     height: 1.4,
@@ -155,7 +187,7 @@ class MedicineDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Dummy data for demonstration purposes,
-    // in a real app, you'd fetch this using medicineId
+    // in a real app, you'd fetch this using widget.medicineId
     final String medicineName = "Paracetamol 500mg";
     final String brand = "Calpol (GSK)"; // Added manufacturer name
     final String genericName =
@@ -202,8 +234,8 @@ class MedicineDetailsScreen extends StatelessWidget {
         'question': 'What are the common side effects?',
         'answer_points': [
           'Side effects are usually mild:',
-          '  •  Mild stomach upset or nausea.',
-          '  •  Very rarely, allergic reactions like a skin rash or swelling.',
+          '   •   Mild stomach upset or nausea.',
+          '   •   Very rarely, allergic reactions like a skin rash or swelling.',
           '**Important:** If you experience any severe reactions (like difficulty breathing or severe swelling), **get medical help immediately**.',
         ],
       },
@@ -243,241 +275,258 @@ class MedicineDetailsScreen extends StatelessWidget {
           onPressed: () => context.go('/vault'), // Navigate back to Vault
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: ListView(
-          children: [
-            // --- Medicine Header Section ---
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
-              decoration: BoxDecoration(
-                // Enhanced gradient for a modern look
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.deepPurple.shade300,
-                    Colors.deepPurple.shade500,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(
-                  12,
-                ), // Slightly more rounded corners
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.deepPurple.shade200.withOpacity(0.4),
-                    spreadRadius: 2,
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+      body: AnimationLimiter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: ListView(
+            children: AnimationConfiguration.toStaggeredList(
+              duration: const Duration(
+                milliseconds: 375,
+              ), // Duration for each child animation
+              delay: const Duration(
+                milliseconds: 100,
+              ), // Delay between each child's animation start
+              childAnimationBuilder: (widget) => SlideAnimation(
+                verticalOffset: 50.0, // Slide from bottom
+                child: FadeInAnimation(child: widget),
               ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.medical_services,
-                    size: 40, // Larger icon
-                    color: Colors.white, // White icon for contrast
+              children: [
+                // --- Medicine Header Section ---
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 15,
                   ),
-                  const SizedBox(width: 15), // Increased spacing
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          medicineName,
-                          style: const TextStyle(
-                            fontSize: 22, // Larger font size for main name
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white, // White text for contrast
-                          ),
-                        ),
-                        Text(
-                          '($genericName)', // Display generic name
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Colors.white70, // Slightly faded white
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.deepPurple.shade300,
+                        Colors.deepPurple.shade500,
                       ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.deepPurple.shade200.withOpacity(0.4),
+                        spreadRadius: 2,
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 15), // Space between header and details
-            // --- Basic Details Section ---
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(
-                  10,
-                ), // Slightly rounded for consistency
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDetailRow("Brand:", brand),
-                  const Divider(height: 15, thickness: 0.5),
-                  _buildDetailRow("Dosage:", dosage),
-                  const Divider(height: 15, thickness: 0.5),
-                  _buildDetailRow("Frequency:", frequency),
-                  const Divider(height: 15, thickness: 0.5),
-                  _buildDetailRow("Duration:", duration),
-                  const Divider(height: 15, thickness: 0.5),
-                  _buildDetailRow("Warnings:", warnings, isWarning: true),
-                  const Divider(height: 15, thickness: 0.5),
-                  _buildDetailRow("Side Effects:", sideEffects),
-                  const Divider(height: 15, thickness: 0.5),
-                  _buildDetailRow("Storage:", storage),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // --- AI Insights Section ---
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
-                child: Text(
-                  'AI Insights & Common Questions',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple, // Using a theme color
-                  ),
-                ),
-              ),
-            ),
-            ...aiQuestions.map(
-              (q) => Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 8.0,
-                ), // Spacing between accordions
-                child: CustomStyledAccordion(
-                  medicineName: q['question']!,
-                  medicineDetails: 'Tap to see answer', // Consistent subtitle
-                  expandedContentWidget: _buildElderlyFriendlyContent(
-                    q['answer_points'] as List<String>,
-                  ), // Pass the Widget
-                  leadingWidget: Container(
-                    color: Colors.grey, // Consistent grey background for icon
-                    padding: const EdgeInsets.all(5),
-                    child: Icon(
-                      Icons.smart_toy_outlined, // AI icon
-                      color: Colors.blue.shade700,
-                      size: 22,
-                    ),
-                  ),
-                  headerHeight: 50.0, // Consistent header height
-                ),
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            // --- Ask AI More Button ---
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _showAskAiDialog(context, medicineName),
-                icon: const Icon(Icons.help_outline),
-                label: const Text('Ask AI More Questions'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Colors.deepPurple.shade600, // A prominent color
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  elevation: 5, // Add a subtle shadow
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // --- Attachments Section ---
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
-                child: Text(
-                  'Attachments',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple, // Using a theme color
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildAttachmentButton(
-                    context,
-                    Icons.insert_drive_file,
-                    'View Prescription',
-                    () {
-                      print('Viewing prescription for $medicineId');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Opening prescription...'),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.medical_services,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              medicineName,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              '($genericName)',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Colors.white70,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
-                  _buildAttachmentButton(
-                    context,
-                    Icons.camera_alt,
-                    'View Box Image',
-                    () {
-                      print('Viewing box image for $medicineId');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Opening box image...')),
-                      );
-                    },
+                ),
+
+                const SizedBox(height: 15), // Space between header and details
+                // --- Basic Details Section ---
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow("Brand:", brand),
+                      const Divider(height: 15, thickness: 0.5),
+                      _buildDetailRow("Dosage:", dosage),
+                      const Divider(height: 15, thickness: 0.5),
+                      _buildDetailRow("Frequency:", frequency),
+                      const Divider(height: 15, thickness: 0.5),
+                      _buildDetailRow("Duration:", duration),
+                      const Divider(height: 15, thickness: 0.5),
+                      _buildDetailRow("Warnings:", warnings, isWarning: true),
+                      const Divider(height: 15, thickness: 0.5),
+                      _buildDetailRow("Side Effects:", sideEffects),
+                      const Divider(height: 15, thickness: 0.5),
+                      _buildDetailRow("Storage:", storage),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // --- AI Insights Section Title ---
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: Text(
+                      'AI Insights & Common Questions',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple,
+                      ),
+                    ),
+                  ),
+                ),
+                // --- AI Questions Accordions ---
+                ...aiQuestions.map(
+                  (q) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: CustomStyledAccordion(
+                      medicineName: q['question']!,
+                      medicineDetails:
+                          'Tap to see answer', // Consistent subtitle
+                      expandedContentWidget: _buildElderlyFriendlyContent(
+                        q['answer_points'] as List<String>,
+                      ), // Pass the Widget
+                      leadingWidget: Container(
+                        color:
+                            Colors.grey, // Consistent grey background for icon
+                        padding: const EdgeInsets.all(5),
+                        child: Icon(
+                          Icons.smart_toy_outlined, // AI icon
+                          color: Colors.blue.shade700,
+                          size: 22,
+                        ),
+                      ),
+                      headerHeight: 50.0, // Consistent header height
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+
+                // --- Ask AI More Button ---
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showAskAiDialog(context, medicineName),
+                    icon: const Icon(Icons.help_outline),
+                    label: const Text('Ask AI More Questions'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple.shade600,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      elevation: 5,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // --- Attachments Section Title ---
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: Text(
+                      'Attachments',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple,
+                      ),
+                    ),
+                  ),
+                ),
+                // --- Attachment Buttons Container ---
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildAttachmentButton(
+                        context,
+                        Icons.insert_drive_file,
+                        'View Prescription',
+                        () {
+                          print(
+                            'Viewing prescription for ${widget.medicineId}',
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Opening prescription...'),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildAttachmentButton(
+                        context,
+                        Icons.camera_alt,
+                        'View Box Image',
+                        () {
+                          print('Viewing box image for ${widget.medicineId}');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Opening box image...'),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20), // Add some bottom padding
+              ],
             ),
-            const SizedBox(height: 20), // Add some bottom padding
-          ],
+          ),
         ),
       ),
     );

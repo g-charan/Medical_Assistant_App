@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 
 class CustomStyledAccordion extends StatefulWidget {
-  final String medicineName;
-  final String medicineDetails;
-  final String expandedContent;
-  final bool initialExpanded;
-  final Widget? leadingWidget;
-  final String? actionText;
-  final VoidCallback? onActionPressed;
-  final double? headerHeight;
+  // Public properties of the accordion.
+  final String medicineName; // The main title of the accordion header
+  final String medicineDetails; // The subtitle or brief detail in the header
+  final String
+  expandedContent; // The content visible when the accordion is open
+  final bool initialExpanded; // Whether the accordion should be open initially
+  final Widget?
+  leadingWidget; // Optional widget to display at the start of the header (e.g., an icon or checkbox)
+  final String?
+  actionText; // Optional text for an actionable button at the bottom of the expanded content
+  final VoidCallback?
+  onActionPressed; // Callback for when the action button is pressed
+  final double? headerHeight; // Height of the accordion header
 
   const CustomStyledAccordion({
     super.key,
@@ -19,7 +24,8 @@ class CustomStyledAccordion extends StatefulWidget {
     this.leadingWidget,
     this.actionText,
     this.onActionPressed,
-    this.headerHeight = 50.0, // Set to 50.0 to match the _buildList2 height
+    this.headerHeight =
+        50.0, // Default header height, matching common list item heights
   });
 
   @override
@@ -31,7 +37,10 @@ class _CustomStyledAccordionState extends State<CustomStyledAccordion>
   bool _isExpanded = false;
   late AnimationController _animationController;
   late Animation<double> _arrowRotationAnimation;
-  late Animation<double> _sizeAnimation;
+  late Animation<double>
+  _sizeAnimation; // Controls the height of the expanded content
+  late Animation<double>
+  _fadeAnimation; // Controls the fade-in/out of the expanded content
 
   @override
   void initState() {
@@ -40,18 +49,26 @@ class _CustomStyledAccordionState extends State<CustomStyledAccordion>
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300), // Smooth animation duration
     );
 
+    // Animates the rotation of the arrow icon (0 degrees to 180 degrees)
     _arrowRotationAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
+    // Animates the size (height) of the content
     _sizeAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
     );
 
+    // Animates the opacity (fade) of the content for a smoother transition
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
+    // If initially expanded, set the animation to its end state
     if (_isExpanded) {
       _animationController.value = 1.0;
     }
@@ -63,6 +80,7 @@ class _CustomStyledAccordionState extends State<CustomStyledAccordion>
     super.dispose();
   }
 
+  /// Toggles the expanded state and runs the animation.
   void _toggleExpanded() {
     setState(() {
       _isExpanded = !_isExpanded;
@@ -77,47 +95,53 @@ class _CustomStyledAccordionState extends State<CustomStyledAccordion>
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Match the _buildList2 container style: light grey background with horizontal borders, no rounded corners.
-      margin: const EdgeInsets.only(top: 2, bottom: 2), // Vertical spacing
+      // Consistent styling for the entire accordion card
+      margin: const EdgeInsets.symmetric(
+        vertical: 2,
+      ), // Vertical spacing between accordions
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color: Colors.grey[200], // Light grey background
         border: Border.symmetric(
-          horizontal: BorderSide(color: Colors.grey.shade400),
+          horizontal: BorderSide(
+            color: Colors.grey.shade400,
+            width: 1.0,
+          ), // Horizontal borders
         ),
-        // Removed borderRadius to make it square
       ),
       child: Column(
         children: [
-          // Header Section: This is the part that is always visible
+          // Header Section: Always visible and tappable to toggle expansion
           InkWell(
             onTap: _toggleExpanded,
+            // Ensure the entire header area is tappable
+            customBorder: Border.all(
+              color: Colors.transparent,
+            ), // No visible border on tap
             child: SizedBox(
-              height:
-                  widget.headerHeight, // Use dynamic header height (now 50.0)
+              height: widget.headerHeight, // Use the provided header height
               child: Padding(
-                padding: const EdgeInsets.all(5), // Match _buildList2 padding
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 5.0,
+                ), // Padding inside the header
                 child: Row(
                   children: [
-                    const SizedBox(width: 4), // Match _buildList2 spacing
-                    // Replaced static icon with leadingWidget
-                    if (widget.leadingWidget != null)
-                      Container(
-                        decoration: const BoxDecoration(
-                          // Removed borderRadius
-                          // Consider if you want this inner container to have its own color or if the icon color is enough
-                        ),
-                        child: widget.leadingWidget!,
-                      ),
-                    const SizedBox(width: 8), // Match _buildList2 spacing
+                    // Optional leading widget (e.g., checkbox, icon)
+                    if (widget.leadingWidget != null) ...[
+                      widget.leadingWidget!,
+                      const SizedBox(width: 8), // Spacing after leading widget
+                    ],
+                    // Expanded column for medicine name and details
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment
+                            .center, // Vertically center content
                         children: [
                           Text(
                             widget.medicineName,
                             style: const TextStyle(
-                              fontSize: 13.0, // Retained from your version
+                              fontSize: 13.0,
                               color: Colors.black87,
                               fontWeight: FontWeight.w500,
                             ),
@@ -127,8 +151,9 @@ class _CustomStyledAccordionState extends State<CustomStyledAccordion>
                           Text(
                             widget.medicineDetails,
                             style: const TextStyle(
-                              fontSize: 9.5, // Retained from your version
-                              height: 1.1,
+                              fontSize: 9.5,
+                              height:
+                                  1.1, // Adjust line height for better readability
                               color: Colors.black54,
                             ),
                             maxLines: 1,
@@ -137,51 +162,70 @@ class _CustomStyledAccordionState extends State<CustomStyledAccordion>
                         ],
                       ),
                     ),
+                    // Arrow icon that rotates based on expansion state
                     RotationTransition(
                       turns: _arrowRotationAnimation,
                       child: const Icon(
                         Icons.keyboard_arrow_down,
-                        size: 20, // Retained from your version
+                        size: 20,
+                        color: Colors.black54, // Consistent icon color
                       ),
                     ),
+                    const SizedBox(width: 4), // Small trailing space
                   ],
                 ),
               ),
             ),
           ),
-          // Animated Content Section: This expands/collapses
+          // Animated Content Section: Expands/collapses with animation
           SizeTransition(
-            axisAlignment: 0.0,
+            axisAlignment: 0.0, // Align size transition from top
             sizeFactor: _sizeAnimation,
             child: FadeTransition(
-              opacity: _sizeAnimation,
+              opacity: _fadeAnimation,
               child: Offstage(
+                // Use Offstage to prevent content from being built when fully collapsed
+                // for performance, but only when animation is dismissed.
                 offstage: !_isExpanded && _animationController.isDismissed,
                 child: TickerMode(
+                  // Ensure children widgets (like text) only tick when visible/animating
                   enabled: _isExpanded || !_animationController.isDismissed,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 12.0),
+                    padding: const EdgeInsets.fromLTRB(
+                      16.0,
+                      4.0,
+                      16.0,
+                      12.0,
+                    ), // Padding for expanded content
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           widget.expandedContent,
-                          textAlign: TextAlign.justify,
+                          textAlign: TextAlign
+                              .justify, // Justify text for better readability
                           style: const TextStyle(
                             fontSize: 12.5,
                             color: Colors.black87,
                           ),
                         ),
-                        if (widget.actionText != null)
+                        // Optional action button
+                        if (widget.actionText != null &&
+                            widget.onActionPressed != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: GestureDetector(
                               onTap: widget.onActionPressed,
+                              behavior: HitTestBehavior
+                                  .opaque, // Ensures the whole padding area is tappable
                               child: Text(
                                 widget.actionText!,
                                 style: const TextStyle(
                                   fontSize: 10.5,
-                                  color: Colors.blue,
+                                  color: Colors
+                                      .blue, // Action text in a prominent color
+                                  fontWeight: FontWeight
+                                      .w600, // Make action text slightly bolder
                                 ),
                               ),
                             ),

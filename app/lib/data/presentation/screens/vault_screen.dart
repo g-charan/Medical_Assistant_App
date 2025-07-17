@@ -1,56 +1,60 @@
+// app/data/presentation/widgets/vault/vault_screen.dart
 import 'package:app/data/presentation/widgets/family/family_list.dart';
 import 'package:app/data/presentation/widgets/vault/vault_medicines.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // Import this
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
-class VaultScreen extends StatelessWidget {
-  const VaultScreen({super.key}); // Added const constructor
+class VaultScreen extends StatefulWidget {
+  const VaultScreen({super.key});
+
+  @override
+  State<VaultScreen> createState() => _VaultScreenState();
+}
+
+class _VaultScreenState extends State<VaultScreen> {
+  final GlobalKey<VaultMedicinesState> _vaultMedicinesKey =
+      GlobalKey<VaultMedicinesState>();
 
   @override
   Widget build(BuildContext context) {
-    // Define your list of widgets that will be animated
-    final List<Widget> vaultScreenContent = [
-      // Your existing widgets inside the Column
-      VaultMedicines(),
-      const SizedBox(height: 10),
-      FamilyList(),
-      // Add any other widgets you want to be part of the staggered animation here
-      const SizedBox(
-        height: 20,
-      ), // Added some space at the bottom for better visual
-      const Text(
-        "Welcome to your Vault!",
-        style: TextStyle(
-          fontSize: 24,
-          fontStyle: FontStyle.italic,
-          color: Colors.grey,
-        ),
-      ),
-    ];
-
     return Scaffold(
       body: AnimationLimiter(
-        // Wrap your scrollable content with AnimationLimiter
         child: ListView(
           scrollDirection: Axis.vertical,
-          padding: const EdgeInsets.all(
-            20,
-          ), // Apply the padding directly to the ListView
+          padding: const EdgeInsets.all(20),
           children: AnimationConfiguration.toStaggeredList(
-            // Use toStaggeredList for Column-like children
-            duration: const Duration(
-              milliseconds: 375,
-            ), // Duration for each item's animation
+            duration: const Duration(milliseconds: 375),
             childAnimationBuilder: (widget) => SlideAnimation(
-              verticalOffset: 50.0, // Items slide in from 50 pixels below
-              child: FadeInAnimation(
-                child: widget, // The actual widget being animated
-              ),
+              verticalOffset: 50.0,
+              child: FadeInAnimation(child: widget),
             ),
-            children: vaultScreenContent, // Pass your list of widgets here
+            children: [
+              // Use a precise height for VaultMedicines to fit 10 items perfectly.
+              SizedBox(
+                height:
+                    638.0, // Calculated to fit 10 items + title + pagination
+                child: VaultMedicines(key: _vaultMedicinesKey),
+              ),
+              const SizedBox(height: 10),
+              FamilyList(),
+              const SizedBox(height: 20),
+            ],
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          _vaultMedicinesKey.currentState?.showAddMedicineOptions();
+        },
+        label: const Text('Add Medicine'),
+        icon: const Icon(Icons.add),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
