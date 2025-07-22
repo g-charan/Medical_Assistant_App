@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
-from app.api.v1.models import user_models
-from backend.app.api.v1.schemas import profile_schemas
 from typing import List
 
-# Import 'get_current_user' and also 'TokenData' from the auth dependency
+from app.core.database import SessionLocal
+from app.api.v1.models import profile_models
+from app.api.v1.schemas import profile_schemas
 from app.api.v1.dependencies.auth import get_current_user, TokenData
 
 router = APIRouter()
@@ -14,25 +13,23 @@ router = APIRouter()
 def get_db():
     db = SessionLocal()
     try:
-        yield db    
+        yield db
     finally:
         db.close()
 
-@router.get("/me", response_model=profile_schemas.User)
-def read_users_me(
-    # Use 'TokenData' directly, not 'user_schemas.TokenData'
+@router.get("/me", response_model=profile_schemas.Profile)
+def read_current_user_profile(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Get the profile of the currently authenticated user.
     """
-    # Note: The SQLAlchemy model uses 'id', not 'user_id' for the primary key
-    user = db.query(user_models.User).filter(user_models.User.id == current_user.user_id).first()
-    return user
+    profile = db.query(profile_models.Profile).filter(profile_models.Profile.id == current_user.user_id).first()
+    return profile
 
-@router.get("/", response_model=List[profile_schemas.User])
-def read_users(
+@router.get("/", response_model=List[profile_schemas.Profile])
+def read_all_profiles(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100
@@ -40,5 +37,5 @@ def read_users(
     """
     Retrieve a list of all user profiles.
     """
-    users = db.query(user_models.User).offset(skip).limit(limit).all()
-    return users        
+    profiles = db.query(profile_models.Profile).offset(skip).limit(limit).all()
+    return profiles
