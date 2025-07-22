@@ -1,19 +1,20 @@
-import 'package:app/data/services/auth.dart';
+import 'package:app/data/presentation/providers/auth_provider.dart';
+import '../../services//auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-// 1. Import your AuthService directly
 
-// 2. Reverted back to a standard StatefulWidget
-class SettingsScreen extends StatefulWidget {
+// 1. Convert to a ConsumerStatefulWidget to access Riverpod providers
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-// 3. Reverted back to a standard State
-class _SettingsScreenState extends State<SettingsScreen>
+// 2. Change the State to a ConsumerState
+class _SettingsScreenState extends ConsumerState<SettingsScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
 
@@ -79,13 +80,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                           context.push('/settings/edit-profile');
                         },
                       ),
-                      // 4. Implement the logout functionality directly
+                      // 3. Fix: Use the Riverpod provider to call signOut
                       IconButton(
                         icon: const Icon(Icons.exit_to_app),
                         onPressed: () async {
                           try {
-                            // Create an instance of AuthService and call signOut
-                            await AuthService().signOut();
+                            // Use ref.read to access the service via its provider
+                            await ref.read(authServiceProvider).signOut();
                             // Your GoRouter redirect logic will automatically
                             // handle navigation to the login screen.
                           } catch (e) {

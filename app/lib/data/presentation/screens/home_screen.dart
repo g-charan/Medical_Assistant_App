@@ -11,132 +11,123 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 
-/// ✅ RefreshController Provider
-
-/// ✅ Show basic popup alert (optional feature)
-void _showAlertDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Simple Pop-up'),
-        content: const Text('This is a very basic pop-up message.'),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Close'),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-/// ✅ Main HomeScreen
-class HomeScreen extends ConsumerWidget {
+/// Main HomeScreen
+// FIX: Converted to a ConsumerStatefulWidget to manage the RefreshController's lifecycle.
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  // Create a local RefreshController instance.
+  late final RefreshController _refreshController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the controller when the widget is first created.
+    _refreshController = RefreshController();
+  }
+
+  @override
+  void dispose() {
+    // Dispose of the controller when the widget is removed from the tree.
+    _refreshController.dispose();
+    super.dispose();
+  }
+
   /// Refresh handler
-  void _onRefresh(WidgetRef ref, RefreshController controller) async {
+  void _onRefresh() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Invalidate providers to re-fetch data in the background.
       ref.invalidate(welcomeDataProvider);
-      await Future.delayed(const Duration(milliseconds: 200));
-      controller.refreshCompleted();
+      // You can invalidate other providers here as well
+      // ref.invalidate(anotherDataProvider);
+
+      // Simulate a short delay for the refresh indicator
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      _refreshController.refreshCompleted();
     } catch (e) {
-      controller.refreshFailed();
+      _refreshController.refreshFailed();
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final welcomeAsyncValue = ref.watch(welcomeDataProvider);
-    final refreshController = ref.watch(refreshControllerProvider);
 
+    // Use the locally managed _refreshController.
     return Scaffold(
-      body: Stack(
-        children: [
-          SmartRefresher(
-            controller: refreshController,
-            onRefresh: () => _onRefresh(ref, refreshController),
-            enablePullDown: true,
-            enablePullUp: false,
-            physics: const BouncingScrollPhysics(),
-            header: const ClassicHeader(
-              releaseText: "Release to refresh",
-              completeText: "Refresh completed",
-              failedText: "Refresh failed",
-              idleText: "Pull down to refresh",
-            ),
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
-                  sliver: SliverToBoxAdapter(
-                    child: AnimationLimiter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: AnimationConfiguration.toStaggeredList(
-                          duration: const Duration(milliseconds: 375),
-                          childAnimationBuilder: (widget) => SlideAnimation(
-                            verticalOffset: 50.0,
-                            child: FadeInAnimation(child: widget),
-                          ),
-                          children: [
-                            const Text(
-                              "Hello There!! Charan",
-                              style: TextStyle(fontSize: 32),
-                            ),
-                            const SizedBox(height: 10),
-                            SizedBox(height: 50.0, child: CalendarSlide()),
-                            const SizedBox(height: 20),
-                            UpcomingMedicine(),
-                            const SizedBox(height: 20),
-                            GoalsList(),
-                            const SizedBox(height: 20),
-                            UpcomingAlerts(),
-                            const SizedBox(height: 20),
-                            FamilyList(),
-                            const SizedBox(height: 20),
-                            welcomeAsyncValue.when(
-                              data: (welcomeData) => Text(
-                                welcomeData.name,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                              loading: () => const Text('..Loading'),
-                              error: (error, stack) => Text('Error: $error'),
-                              skipLoadingOnRefresh: false,
-                              skipLoadingOnReload: false,
-                            ),
-                            const SizedBox(height: 100),
-                          ],
-                        ),
+      body: SmartRefresher(
+        controller: _refreshController,
+        onRefresh: _onRefresh,
+        enablePullDown: true,
+        header: const ClassicHeader(),
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
+              sliver: SliverToBoxAdapter(
+                child: AnimationLimiter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: AnimationConfiguration.toStaggeredList(
+                      duration: const Duration(milliseconds: 375),
+                      childAnimationBuilder: (widget) => SlideAnimation(
+                        verticalOffset: 50.0,
+                        child: FadeInAnimation(child: widget),
                       ),
+                      children: [
+                        // The .when is now inline, only affecting the welcome text.
+                        welcomeAsyncValue.when(
+                          data: (welcomeData) => Text(
+                            "Hello There!! ${welcomeData.name}",
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                          // Show a placeholder while loading
+                          loading: () => Container(
+                            height: 38, // Approx height of the text
+                            width: 200,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          // Show a generic welcome message on error
+                          error: (err, stack) => const Text(
+                            "Hello There!!",
+                            style: TextStyle(fontSize: 32),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(height: 50.0, child: CalendarSlide()),
+                        const SizedBox(height: 20),
+                        UpcomingMedicine(),
+                        const SizedBox(height: 20),
+                        GoalsList(),
+                        const SizedBox(height: 20),
+                        UpcomingAlerts(),
+                        const SizedBox(height: 20),
+                        FamilyList(),
+                        const SizedBox(height: 100), // Padding at bottom
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          /// ✅ Floating Refresh Button inside Stack
-          Positioned(
-            bottom: 80,
-            right: 20,
-            child: ElevatedButton(
-              onPressed: () {
-                ref.invalidate(welcomeDataProvider);
-                refreshController.requestRefresh();
-              },
-              style: ButtonStyle(
-                padding: WidgetStateProperty.all(const EdgeInsets.all(10)),
-                minimumSize: WidgetStateProperty.all(const Size(50, 50)),
-                shape: WidgetStateProperty.all(const CircleBorder()),
               ),
-              child: const Icon(Icons.refresh),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+      // Use the standard FloatingActionButton for better layout stability
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _refreshController.requestRefresh();
+        },
+        child: const Icon(Icons.refresh),
       ),
     );
   }

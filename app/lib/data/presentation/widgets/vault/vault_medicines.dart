@@ -168,7 +168,14 @@ class VaultMedicinesState extends State<VaultMedicines> {
     if (addedMedicine != null) {
       setState(() {
         allMedicines.add(addedMedicine);
-        _pageController.jumpToPage(_numPages - 1);
+        // Jump to the last page if a new item is added
+        if (_numPages > 1) {
+          _pageController.animateToPage(
+            _numPages - 1,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
       });
     }
   }
@@ -182,7 +189,6 @@ class VaultMedicinesState extends State<VaultMedicines> {
     );
   }
 
-  // This method is correctly public within _VaultMedicinesState
   void showAddMedicineOptions() {
     showModalBottomSheet(
       context: context,
@@ -242,58 +248,62 @@ class VaultMedicinesState extends State<VaultMedicines> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
-        Expanded(
-          child: SizedBox(
-            height: 540.0 + ((_medicinesPerPage - 1) * 4),
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _numPages,
-              itemBuilder: (context, pageIndex) {
-                final int startIndex = pageIndex * _medicinesPerPage;
-                final int endIndex = (startIndex + _medicinesPerPage).clamp(
-                  0,
-                  allMedicines.length,
-                );
-                final List<Medicine> medicinesForPage = allMedicines.sublist(
-                  startIndex,
-                  endIndex,
-                );
+        // FIX: Replaced the dynamic height calculation with a fixed height.
+        // This ensures the container size is always consistent, preventing layout shifts.
+        // The height is based on the maximum number of items per page.
+        SizedBox(
+          height:
+              _medicinesPerPage * 54.0, // 54px per item (50 height + 4 margin)
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: _numPages,
+            itemBuilder: (context, pageIndex) {
+              final int startIndex = pageIndex * _medicinesPerPage;
+              final int endIndex = (startIndex + _medicinesPerPage).clamp(
+                0,
+                allMedicines.length,
+              );
+              final List<Medicine> medicinesForPage = allMedicines.sublist(
+                startIndex,
+                endIndex,
+              );
 
-                return AnimationLimiter(
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    itemCount: medicinesForPage.length,
-                    itemBuilder: (context, itemIndex) {
-                      return AnimationConfiguration.staggeredList(
-                        position: itemIndex,
-                        duration: const Duration(milliseconds: 375),
-                        child: SlideAnimation(
-                          verticalOffset: 50.0,
-                          child: FadeInAnimation(
-                            child: _MedicineListItem(
-                              key: ValueKey(medicinesForPage[itemIndex].id),
-                              medicine: medicinesForPage[itemIndex],
-                              onTap: () {
-                                context.go(
-                                  '/vault/${medicinesForPage[itemIndex].id}',
-                                );
-                              },
-                              onLongPress: () =>
-                                  _editMedicine(medicinesForPage[itemIndex]),
-                            ),
+              return AnimationLimiter(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: medicinesForPage.length,
+                  itemBuilder: (context, itemIndex) {
+                    return AnimationConfiguration.staggeredList(
+                      position: itemIndex,
+                      duration: const Duration(milliseconds: 375),
+                      child: SlideAnimation(
+                        verticalOffset: 50.0,
+                        child: FadeInAnimation(
+                          child: _MedicineListItem(
+                            key: ValueKey(medicinesForPage[itemIndex].id),
+                            medicine: medicinesForPage[itemIndex],
+                            onTap: () {
+                              context.go(
+                                '/vault/${medicinesForPage[itemIndex].id}',
+                              );
+                            },
+                            onLongPress: () =>
+                                _editMedicine(medicinesForPage[itemIndex]),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                );
-              },
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPageIndex = index;
-                });
-              },
-            ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+            onPageChanged: (index) {
+              setState(() {
+                _currentPageIndex = index;
+              });
+            },
           ),
         ),
         const SizedBox(height: 10),

@@ -11,7 +11,8 @@ part 'auth_provider.g.dart';
 // 1. The provider for the authentication service
 @riverpod
 AuthService authService(Ref ref) {
-  return AuthService();
+  final supabaseClient = Supabase.instance.client;
+  return AuthService(supabaseClient);
 }
 
 // 2. The provider that listens to auth state changes
