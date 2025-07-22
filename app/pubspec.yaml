@@ -43,6 +43,7 @@ dependencies:
   fl_chart: ^1.0.0
   pull_to_refresh_flutter3: ^2.0.2
   flutter_staggered_animations: ^1.1.1
+  supabase_flutter: ^2.9.1
 
 dev_dependencies:
   flutter_test:

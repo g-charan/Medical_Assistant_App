@@ -5,6 +5,9 @@ class MinimalTextField extends StatelessWidget {
   final IconData? prefixIcon;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  // 1. Add the missing properties
+  final bool obscureText;
+  final TextInputType? keyboardType;
 
   const MinimalTextField({
     super.key,
@@ -12,6 +15,9 @@ class MinimalTextField extends StatelessWidget {
     this.prefixIcon,
     this.controller,
     this.onChanged,
+    // 2. Add them to the constructor with a default value for obscureText
+    this.obscureText = false,
+    this.keyboardType,
   });
 
   @override
@@ -19,6 +25,9 @@ class MinimalTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       onChanged: onChanged,
+      // 3. Pass the properties to the underlying TextField
+      obscureText: obscureText,
+      keyboardType: keyboardType,
       style: const TextStyle(
         fontSize: 14.0,
         color: Colors.black87, // Or a subtle grey
@@ -35,7 +44,6 @@ class MinimalTextField extends StatelessWidget {
               )
             : null,
         border: InputBorder.none, // Remove the default underline border
-
         focusedBorder: InputBorder.none, // Remove the border when focused
         enabledBorder: InputBorder.none, // Remove the border when enabled
         filled: true, // Enable background color

@@ -1,17 +1,28 @@
-import 'package:app/data/routing/route_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+import 'package:app/data/routing/router_provider.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: "https://vqizlywojeyrqafztcst.supabase.co",
+    anonKey:
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxaXpseXdvamV5cnFhZnp0Y3N0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMTg1MzUsImV4cCI6MjA2ODY5NDUzNX0.jKeKwzh4paAf_UgryGfWvh9A-K_gRs6zK6sqfBzmZ7s",
+  );
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+final supabase = Supabase.instance.client;
+
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
     return RefreshConfiguration(
       headerBuilder: () =>
           const ClassicHeader(), // Explicitly provide a default header

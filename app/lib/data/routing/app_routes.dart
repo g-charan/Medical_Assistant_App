@@ -38,10 +38,10 @@ const Map<String, String> appRouteTitles = {
 
 final List<AppRouteConfig> appRouteConfigs = [
   AppRouteConfig(
-    path: '/second',
+    path: '/register',
     usesShell: false,
     builder: (BuildContext context, GoRouterState state) {
-      return InputBoxExample();
+      return RegistrationWidget();
     },
   ),
   AppRouteConfig(
