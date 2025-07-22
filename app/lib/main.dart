@@ -10,7 +10,7 @@ void main() async {
   await Supabase.initialize(
     url: "https://vqizlywojeyrqafztcst.supabase.co",
     anonKey:
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxaXpseXdvamV5cnFhZnp0Y3N0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMTg1MzUsImV4cCI6MjA2ODY5NDUzNX0.jKeKwzh4paAf_UgryGfWvh9A-K_gRs6zK6sqfBzmZ7s",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxaXpseXdvamV5cnFhZnp0Y3N0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTgwMTksImV4cCI6MjA2ODc3NDAxOX0.AViEF_5qVqC5jB824_tX4FGyweDuLYljhgam93TXuwM",
   );
   runApp(const ProviderScope(child: MyApp()));
 }
