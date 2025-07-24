@@ -1,8 +1,9 @@
 import 'dart:convert';
 
+import 'package:app/data/models/medicine.dart';
+import 'package:app/data/models/medicines.dart';
 import 'package:app/data/models/welcomeJson.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RemoteServiceMedicines {
   final Dio _dio;
@@ -25,6 +26,16 @@ class RemoteServiceMedicines {
     } else {
       // If the server did not return a 200 OK response, throw an exception.
       throw Exception('Failed to load welcome data');
+    }
+  }
+
+  Future<List<Medicines>> getMedicines() async {
+    var response = await _dio.get('http://10.0.2.2:8000/api/v1/medicines');
+    if (response.statusCode == 200) {
+      final String json = jsonEncode(response.data);
+      return medicinesFromJson(json);
+    } else {
+      throw Exception("Failed to load medicines");
     }
   }
 }
