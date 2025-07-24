@@ -1,6 +1,7 @@
-import 'package:app/data/models/welcomeJson.dart';
+import 'package:app/data/models/medicines.dart';
 import 'package:app/data/presentation/providers/medicine_providers.dart';
-import 'package:app/data/presentation/providers/refresh_controller_provider.dart';
+import 'package:app/data/presentation/providers/medicines.provider.dart';
+
 import 'package:app/data/presentation/widgets/family/family_list.dart';
 import 'package:app/data/presentation/widgets/goals/goals_list.dart';
 import 'package:app/data/presentation/widgets/calendar/calendar_slide.dart';
@@ -42,7 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _onRefresh() async {
     try {
       // Invalidate providers to re-fetch data in the background.
-      ref.invalidate(welcomeDataProvider);
+      ref.invalidate(medicineDataProvider);
       // You can invalidate other providers here as well
       // ref.invalidate(anotherDataProvider);
 
@@ -57,7 +58,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final welcomeAsyncValue = ref.watch(welcomeDataProvider);
+    final medicineAsyncValue = ref.watch(medicineDataProvider);
+    print(medicineAsyncValue);
 
     // Use the locally managed _refreshController.
     return Scaffold(
@@ -82,10 +84,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       children: [
                         // The .when is now inline, only affecting the welcome text.
-                        welcomeAsyncValue.when(
-                          data: (welcomeData) => Text(
-                            "Hello There!! ${welcomeData.name}",
-                            style: const TextStyle(fontSize: 32),
+                        medicineAsyncValue.when(
+                          data: (medicineData) => Column(
+                            children: [
+                              ...medicineData.map((Medicines data) {
+                                return Text(
+                                  "Hello There!! ${data.medicine.name}",
+                                  style: const TextStyle(fontSize: 32),
+                                );
+                              }),
+                            ],
                           ),
                           // Show a placeholder while loading
                           loading: () => Container(
