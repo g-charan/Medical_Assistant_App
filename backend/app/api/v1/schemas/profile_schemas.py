@@ -17,3 +17,8 @@ class Profile(ProfileBase):
 
     class Config:
         from_attributes = True
+
+
+# This schema defines the fields a user can update
+class ProfileUpdate(ProfileBase):
+    pass # It inherits all the fields from ProfileBase
