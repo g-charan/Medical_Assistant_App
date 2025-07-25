@@ -1,8 +1,9 @@
 # In app/api/v1/routers/health_metrics.py
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException, Response
 from sqlalchemy.orm import Session
 from typing import List
+import uuid
 
 from app.core.database import SessionLocal
 from app.api.v1.models import health_metric_models
@@ -53,3 +54,43 @@ def get_health_metrics(
         health_metric_models.HealthMetric.user_id == current_user.user_id
     ).order_by(health_metric_models.HealthMetric.timestamp.desc()).all()
     return metrics
+
+@router.put("/{metric_id}", response_model=health_metric_schemas.HealthMetric)
+def update_health_metric(
+    metric_id: uuid.UUID,
+    metric_update: health_metric_schemas.HealthMetricUpdate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    db_metric = db.query(health_metric_models.HealthMetric).filter(health_metric_models.HealthMetric.metric_id == metric_id).first()
+    
+    if not db_metric:
+        raise HTTPException(status_code=404, detail="Metric not found")
+    if db_metric.user_id != uuid.UUID(current_user.user_id):
+        raise HTTPException(status_code=403, detail="Not authorized to update this metric")
+        
+    update_data = metric_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_metric, key, value)
+        
+    db.commit()
+    db.refresh(db_metric)
+    return db_metric
+
+# --- DELETE ENDPOINT ---
+@router.delete("/{metric_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_health_metric(
+    metric_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    db_metric = db.query(health_metric_models.HealthMetric).filter(health_metric_models.HealthMetric.metric_id == metric_id).first()
+    
+    if not db_metric:
+        raise HTTPException(status_code=404, detail="Metric not found")
+    if db_metric.user_id != uuid.UUID(current_user.user_id):
+        raise HTTPException(status_code=403, detail="Not authorized to delete this metric")
+        
+    db.delete(db_metric)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

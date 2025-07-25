@@ -21,3 +21,4 @@ class HealthMetric(Base):
 
     # Define a relationship to easily access the owner's profile
     owner = relationship("Profile")
+    
