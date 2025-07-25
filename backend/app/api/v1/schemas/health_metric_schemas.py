@@ -21,3 +21,12 @@ class HealthMetric(HealthMetricCreate):
 
     class Config:
         from_attributes = True
+        
+# Add this class to health_metric_schemas.py
+
+# This schema defines the fields a user can update
+class HealthMetricUpdate(BaseModel):
+    metric_type: Optional[str] = None
+    value: Optional[str] = None
+    unit: Optional[str] = None
+    timestamp: Optional[datetime] = None
