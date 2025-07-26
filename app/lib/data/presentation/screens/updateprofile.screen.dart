@@ -1,5 +1,5 @@
 import 'package:app/data/models/profile.models.dart';
-import 'package:app/data/presentation/providers/profile.provier.dart';
+import 'package:app/data/presentation/providers/profile.provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
