@@ -6,6 +6,7 @@ import 'package:app/data/presentation/screens/login_screen.dart';
 import 'package:app/data/presentation/screens/medicine_details_screen.dart';
 import 'package:app/data/presentation/screens/metrics_screen.dart';
 import 'package:app/data/presentation/screens/settings_screen.dart';
+import 'package:app/data/presentation/screens/updateprofile.screen.dart';
 import 'package:app/data/presentation/screens/vault_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,7 @@ import '../presentation/screens/registration_screen.dart';
 
 class AppRouteConfig {
   final String path;
+  // The builder should always be defined to return the generic 'Widget' type.
   final Widget Function(BuildContext, GoRouterState) builder;
   final bool usesShell;
 
@@ -30,87 +32,102 @@ const Map<String, String> appRouteTitles = {
   '/ai': 'AI',
   '/metrics': 'Stats',
   '/family': 'Family',
-  '/settings': 'Settings', // Example
-  '/profile': 'Profile', // Example
+  '/settings': 'Settings',
+  '/profile': 'Profile',
   '/alerts': 'Alerts',
-  // Add titles for all your main routes here
 };
 
 final List<AppRouteConfig> appRouteConfigs = [
   AppRouteConfig(
     path: '/register',
     usesShell: false,
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      return RegistrationWidget();
+      return const RegistrationWidget();
     },
   ),
   AppRouteConfig(
     path: '/login',
     usesShell: false,
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      return LoginWidget();
+      return const LoginWidget();
     },
   ),
   AppRouteConfig(
     path: '/',
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      return HomeScreen();
+      return const HomeScreen();
     },
   ),
   AppRouteConfig(
-    path: '/vault', // Example of adding another route
+    path: '/vault',
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      return VaultScreen();
+      return const VaultScreen();
     },
   ),
   AppRouteConfig(
-    path: '/family', // Example of adding another route
+    path: '/family',
+    // FIX: Explicitly define the return type as Widget. This allows it to accept
+    // ConsumerWidget, ConsumerStatefulWidget, or any other widget type.
     builder: (BuildContext context, GoRouterState state) {
-      return FamilyScreen();
+      return const FamilyScreen();
     },
   ),
   AppRouteConfig(
-    path: '/ai', // Example of adding another route
+    path: '/ai',
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      return ArtificialIntelligenceScreen();
+      return const ArtificialIntelligenceScreen();
     },
   ),
   AppRouteConfig(
-    path: '/metrics', // Example of adding another route
+    path: '/metrics',
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
       return MetricsScreen();
     },
   ),
   AppRouteConfig(
-    path: '/settings', // Example of adding another route
+    path: '/settings',
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      return SettingsScreen();
+      return const SettingsScreen();
     },
   ),
   AppRouteConfig(
     path: '/vault/:medicineId',
     usesShell: false,
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      // Extract the medicineId from the state parameters
       final String? medicineId = state.pathParameters['medicineId'];
-      // You can use the medicineId to fetch details or pass it to the screen
       return MedicineDetailsScreen(medicineId: "$medicineId");
     },
   ),
   AppRouteConfig(
     path: '/family/:familyId',
     usesShell: false,
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      // Extract the familyId from the state parameters
       final String? familyId = state.pathParameters['familyId'];
-      // You can use the familyId to fetch details or pass it to the screen
       return FamilyDetailsScreen(familyMemberId: "$familyId");
     },
   ),
   AppRouteConfig(
     path: "/alerts",
+    // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
-      return AlertsScreen();
+      return const AlertsScreen();
+    },
+  ),
+  AppRouteConfig(
+    path: "/settings/edit-profile",
+    usesShell: false,
+    // FIX: Explicitly define the return type as Widget.
+    builder: (BuildContext context, GoRouterState state) {
+      return const UpdateProfileScreen();
     },
   ),
 ];

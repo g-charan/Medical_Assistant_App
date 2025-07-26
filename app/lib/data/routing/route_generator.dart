@@ -29,7 +29,6 @@ final GoRouter router = GoRouter(
         ) // Filter for routes that DO NOT use the shell
         .map((config) {
           return GoRoute(path: config.path, builder: config.builder);
-        })
-        .toList(),
+        }),
   ],
 );
