@@ -87,12 +87,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         medicineAsyncValue.when(
                           data: (medicineData) => Column(
                             children: [
-                              ...medicineData.map((Medicines data) {
-                                return Text(
-                                  "Hello There!! ${data.medicine.name}",
-                                  style: const TextStyle(fontSize: 32),
-                                );
-                              }),
+                              Text(
+                                "Hello There!! Charan",
+                                style: const TextStyle(fontSize: 32),
+                              ),
                             ],
                           ),
                           // Show a placeholder while loading
