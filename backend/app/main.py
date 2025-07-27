@@ -4,12 +4,14 @@ from app.api.v1.routers import profiles
 from app.api.v1.routers import medicines
 from app.api.v1.routers import relationships
 from app.api.v1.routers import health_metrics
+from app.api.v1.routers import files
 
 app = FastAPI(title = "Medi Help API")
 app.include_router(profiles.router, prefix="/api/v1", tags=["Users"])
 app.include_router(medicines.router, prefix="/api/v1/medicines", tags=["Medicines"])
 app.include_router(relationships.router, prefix="/api/v1/relationships", tags=["Relationships"])
 app.include_router(health_metrics.router, prefix="/api/v1/health_metrics", tags=["Health Metrics"])
+app.include_router(files.router, prefix = "/api/v1/files", tags=["Files"])
 
 @app.get("/", tags=["Root"])
 def read_root():
