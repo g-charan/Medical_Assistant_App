@@ -44,6 +44,8 @@ dependencies:
   pull_to_refresh_flutter3: ^2.0.2
   flutter_staggered_animations: ^1.1.1
   supabase_flutter: ^2.9.1
+  image_picker: ^1.1.2
+  google_mlkit_text_recognition: ^0.15.0
 
 dev_dependencies:
   flutter_test:
