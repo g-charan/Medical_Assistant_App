@@ -3,6 +3,7 @@
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
+import json
 
 # Load the environment variables (like your API key)
 load_dotenv()
@@ -41,3 +42,24 @@ def send_message_to_ai_stream(convo, prompt):
     for chunk in response_stream:
         # Yield each piece of text as it's generated
         yield chunk.text
+        
+def analyze_ocr_text(text: str) -> dict:
+    """
+    Analyzes raw OCR text to extract medicine name and description.
+    """
+    # This is our "prompt engineering". We give the AI a clear instruction.
+    prompt = f"""
+    Analyze the following text extracted from a medicine package.
+    Identify the primary trade name of the medicine and provide a brief, one-sentence description of its main use.
+    Return the result as a JSON object with two keys: "name" and "description".
+
+    Text to analyze:
+    ---
+    {text}
+    ---
+    """
+    
+    response = model.generate_content(prompt)
+    
+    # The response from the model will be a JSON string, so we parse it into a Python dictionary
+    return json.loads(response.text)
