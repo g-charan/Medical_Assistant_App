@@ -4,7 +4,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 // Import your new data models
 import 'package:app/data/models/alert_models.dart'; // Make sure this path is correct!
 // Import your CustomAccordion (assuming its path is correct)
-import 'package:app/data/presentation/widgets/alerts/custom_accordion.dart';
+import 'package:app/data/presentation/widgets/ui/alerts/custom_accordion.dart';
 
 // --- MAIN ALERTS SCREEN ---
 class AlertsScreen extends StatelessWidget {
@@ -159,10 +159,10 @@ class _AlertsPageStyledState extends State<AlertsPageStyled> {
     super.dispose();
   }
 
-  int _calculateTotalPages<T>(List<T> alerts) {
-    if (alerts.isEmpty) return 0;
-    return (alerts.length / _alertsPerPage).ceil();
-  }
+  // int _calculateTotalPages<T>(List<T> alerts) {
+  //   if (alerts.isEmpty) return 0;
+  //   return (alerts.length / _alertsPerPage).ceil();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -216,8 +216,8 @@ class _AlertsPageStyledState extends State<AlertsPageStyled> {
                         onChanged: (bool? value) {
                           // TODO: Implement logic to mark dose as taken
                         },
-                        fillColor: MaterialStateProperty.resolveWith((states) {
-                          if (states.contains(MaterialState.selected)) {
+                        fillColor: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
                             return Colors.green.shade600;
                           }
                           return Colors.grey.shade400;
@@ -395,7 +395,7 @@ class _AlertsPageStyledState extends State<AlertsPageStyled> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.all(6),

@@ -1,19 +1,15 @@
+import 'package:app/common/utils/provider.utils.dart';
 import 'package:app/data/models/profile.models.dart';
-import 'package:app/data/presentation/providers/dio.provider.dart';
-import 'package:app/data/models/family.models.dart';
-import 'package:app/data/services/family.services.dart';
 import 'package:app/data/services/profile.services.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
 
 // 1. Provider for the Dio instance (optional, but good for testing and global config)
 
 // 2. Provider for your RemoteServiceMedicines instance
 // It depends on dioProvider, so Riverpod manages the creation order.
-final remoteProfileProvider = Provider<RemoteProfileService>((ref) {
-  final dioInstance = ref.watch(authenticatedDioProvider);
-  return RemoteProfileService(dio: dioInstance); // Pass it to your service
-});
+final remoteProfileProvider = createServiceProvider(
+  (dio) => RemoteProfileService(dio: dio),
+);
 
 // 3. FutureProvider for fetching the Welcome data
 // It depends on remoteServiceMedicinesProvider to get the service instance.

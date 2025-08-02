@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/data/presentation/providers/auth_provider.dart';
-import 'package:app/data/presentation/widgets/registration/registration_form.dart';
+import 'package:app/data/presentation/widgets/ui/registration/registration_form.dart';
 
 // 1. Convert to ConsumerStatefulWidget
 class RegistrationWidget extends ConsumerStatefulWidget {

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/data/presentation/providers/auth_provider.dart'; // Your provider
-import 'package:app/data/presentation/widgets/login/login_form.dart'; // Your form widget
+import 'package:app/data/presentation/widgets/ui/login/login_form.dart'; // Your form widget
 import 'package:app/common/widgets/custom_button.dart';
 import 'package:app/common/widgets/custom_divider.dart';
 
