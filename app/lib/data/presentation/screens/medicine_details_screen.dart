@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:app/data/presentation/widgets/medicine/custom_accordion.dart';
+import 'package:app/data/presentation/widgets/ui/medicine/custom_accordion.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // Import the package
 
 // Re-using the CustomStyledAccordion from the previous example for consistent styling

@@ -1,24 +1,22 @@
 import 'dart:convert';
-import 'package:app/data/models/family.models.dart';
+import 'package:app/data/models/medicines.dart';
 import 'package:app/data/services/config.services.dart';
 import 'package:dio/dio.dart';
 
-final _url = "/relationships/";
+final _url = "/medicines";
 
-class RemoteFamilyService extends ConfigServices {
-  RemoteFamilyService({required Dio dio}) : super(dio: dio);
+class RemoteServiceMedicines extends ConfigServices {
+  RemoteServiceMedicines({required Dio dio}) : super(dio: dio);
 
-  Future<List<Family>> getFamily() async {
+  Future<List<Medicines>> getMedicines() async {
     try {
       final response = await dio.get(_url);
 
       if (response.statusCode == 200) {
         final String json = jsonEncode(response.data);
-        return familyFromJson(json);
+        return medicinesFromJson(json);
       } else {
-        throw Exception(
-          "Failed to load family relationships: ${response.statusCode}",
-        );
+        throw Exception("Failed to load medicines: ${response.statusCode}");
       }
     } on DioException catch (e) {
       switch (e.type) {
@@ -34,7 +32,7 @@ class RemoteFamilyService extends ConfigServices {
           throw Exception("Network error: ${e.message}");
       }
     } catch (e) {
-      throw Exception("Unexpected error loading family relationships: $e");
+      throw Exception("Unexpected error loading medicines: $e");
     }
   }
 }

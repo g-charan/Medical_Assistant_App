@@ -1,16 +1,12 @@
-// app/data/presentation/widgets/vault/vault_medicines.dart
 import 'package:app/data/presentation/providers/medicines.provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:uuid/uuid.dart'; // Used to generate unique IDs
+import 'package:uuid/uuid.dart';
 
-// Import your data models and the provider
 import 'package:app/data/models/medicines.dart';
-import 'package:app/data/presentation/providers/medicine_providers.dart';
 
-// CONVERTED to a ConsumerStatefulWidget
 class VaultMedicines extends ConsumerStatefulWidget {
   const VaultMedicines({super.key});
 
@@ -18,7 +14,6 @@ class VaultMedicines extends ConsumerStatefulWidget {
   ConsumerState<VaultMedicines> createState() => VaultMedicinesState();
 }
 
-// CONVERTED to a ConsumerState
 class VaultMedicinesState extends ConsumerState<VaultMedicines> {
   final PageController _pageController = PageController();
   int _currentPageIndex = 0;
@@ -37,7 +32,6 @@ class VaultMedicinesState extends ConsumerState<VaultMedicines> {
     );
 
     if (updatedMedicine != null) {
-      // In a real app, you would call your update service here
       ref.invalidate(medicineDataProvider);
     }
   }
@@ -46,7 +40,7 @@ class VaultMedicinesState extends ConsumerState<VaultMedicines> {
     const uuid = Uuid();
     final newMedicine = Medicines(
       id: uuid.v4(),
-      userId: '', // This would typically be the current user's ID
+      userId: '',
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 30)),
       notes: '',
@@ -66,7 +60,6 @@ class VaultMedicinesState extends ConsumerState<VaultMedicines> {
     );
 
     if (addedMedicine != null) {
-      // In a real app, you would call your add service here
       ref.invalidate(medicineDataProvider);
     }
   }
@@ -149,6 +142,7 @@ class VaultMedicinesState extends ConsumerState<VaultMedicines> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
+            // FIX: Use Expanded to take available space and prevent overflow
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -167,83 +161,92 @@ class VaultMedicinesState extends ConsumerState<VaultMedicines> {
                     endIndex,
                   );
 
+                  // Create a fixed grid of 10 items with flexible sizing
                   return AnimationLimiter(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      itemCount: medicinesForPage.length,
-                      itemBuilder: (context, itemIndex) {
-                        final medicineData = medicinesForPage[itemIndex];
-                        return AnimationConfiguration.staggeredList(
-                          position: itemIndex,
-                          duration: const Duration(milliseconds: 375),
-                          child: SlideAnimation(
-                            verticalOffset: 50.0,
-                            child: FadeInAnimation(
-                              child: _MedicineListItem(
-                                key: ValueKey(medicineData.id),
-                                medicinesData: medicineData,
-                                onTap: () =>
-                                    context.go('/vault/${medicineData.id}'),
-                                onLongPress: () => _editMedicine(medicineData),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: List.generate(_medicinesPerPage, (index) {
+                        if (index < medicinesForPage.length) {
+                          final medicineData = medicinesForPage[index];
+                          return Expanded(
+                            child: AnimationConfiguration.staggeredList(
+                              position: index,
+                              duration: const Duration(milliseconds: 375),
+                              child: SlideAnimation(
+                                verticalOffset: 50.0,
+                                child: FadeInAnimation(
+                                  child: _MedicineListItem(
+                                    key: ValueKey(medicineData.id),
+                                    medicinesData: medicineData,
+                                    onTap: () =>
+                                        context.go('/vault/${medicineData.id}'),
+                                    onLongPress: () =>
+                                        _editMedicine(medicineData),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        } else {
+                          // Empty placeholder that takes equal space
+                          return const Expanded(child: SizedBox());
+                        }
+                      }),
                     ),
                   );
                 },
               ),
             ),
-            // FIXED: Added the pagination controls back
+            // Pagination controls - takes only needed space
             if (numPages > 1)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: _currentPageIndex > 0
-                        ? () {
-                            _pageController.previousPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                            );
-                          }
-                        : null,
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new_outlined,
-                      size: 20,
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: _currentPageIndex > 0
+                          ? () {
+                              _pageController.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOut,
+                              );
+                            }
+                          : null,
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_outlined,
+                        size: 20,
+                      ),
+                      splashRadius: 22,
                     ),
-                    splashRadius: 22,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    " ${_currentPageIndex + 1} / $numPages ",
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black54,
+                    const SizedBox(width: 8),
+                    Text(
+                      " ${_currentPageIndex + 1} / $numPages ",
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black54,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _currentPageIndex < numPages - 1
-                        ? () {
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeIn,
-                            );
-                          }
-                        : null,
-                    icon: const Icon(
-                      Icons.arrow_forward_ios_outlined,
-                      size: 20,
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: _currentPageIndex < numPages - 1
+                          ? () {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeIn,
+                              );
+                            }
+                          : null,
+                      icon: const Icon(
+                        Icons.arrow_forward_ios_outlined,
+                        size: 20,
+                      ),
+                      splashRadius: 22,
                     ),
-                    splashRadius: 22,
-                  ),
-                ],
+                  ],
+                ),
               ),
           ],
         );
@@ -252,9 +255,7 @@ class VaultMedicinesState extends ConsumerState<VaultMedicines> {
   }
 }
 
-// --- Child Widgets ---
-// (These are unchanged from the previous version)
-
+// Keep all the other widget classes from your original code
 class _MedicineListItem extends StatelessWidget {
   const _MedicineListItem({
     required this.medicinesData,
@@ -291,7 +292,11 @@ class _MedicineListItem extends StatelessWidget {
                 color: Colors.white,
               ),
               padding: const EdgeInsets.all(5),
-              child: Icon(Icons.medical_services, color: Colors.blue, size: 20),
+              child: const Icon(
+                Icons.medical_services,
+                color: Colors.blue,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -406,7 +411,6 @@ class _EditMedicineDialogState extends State<_EditMedicineDialog> {
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
-              // NOTE: Assumes you have added copyWith to your models
               final result = widget.medicines.copyWith(
                 notes: _notesController.text.trim(),
                 medicine: widget.medicines.medicine.copyWith(
