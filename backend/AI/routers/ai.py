@@ -73,3 +73,18 @@ async def chat_with_ai(
     db.commit()
 
     return ai_schemas.ChatResponse(response=ai_response_text)
+
+@router.post("/ocr-analyze", response_model=ai_schemas.OcrResponse)
+def analyze_medicine_from_ocr(
+    ocr_request: ai_schemas.OcrRequest,
+    current_user: TokenData = Depends(get_current_user) # Secure the endpoint
+):
+    """
+    Receives raw OCR text and uses AI to extract the medicine name and description.
+    """
+    try:
+        analysis_result = ai_services.analyze_ocr_text(ocr_request.text)
+        return analysis_result
+    except Exception as e:
+        # Handle potential errors from the AI service (e.g., invalid JSON response)
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {e}")
