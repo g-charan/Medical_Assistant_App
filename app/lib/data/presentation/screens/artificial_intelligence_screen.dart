@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 // Message model
 class ChatMessage {
@@ -304,6 +306,16 @@ class _ArtificialIntelligenceScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => context.go('/'),
+        ),
+        title: const Text(
+          "AI Assistant",
+          style: TextStyle(color: Colors.black),
+        ),
+      ),
       body: _showHistory ? _buildHistoryView() : _buildChatView(),
     );
   }
@@ -402,7 +414,11 @@ class _ArtificialIntelligenceScreenState
             children: [
               IconButton(
                 onPressed: _toggleHistory,
-                icon: const Icon(Icons.arrow_back),
+                icon: const FaIcon(
+                  FontAwesomeIcons.xmark,
+                  color: Colors.black,
+                  size: 20,
+                ),
               ),
               const Text(
                 "Chat History",

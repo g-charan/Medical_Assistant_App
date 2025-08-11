@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Assuming these providers and widgets exist from your previous code
 import 'package:app/data/presentation/providers/medicines.provider.dart';
@@ -10,19 +13,15 @@ import 'package:app/data/presentation/widgets/utils/app_refresher.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  // FIX: Moved color constants outside the build method to be accessible by all helper methods.
-  static const Color primaryTextColor = Colors.black87;
+  // FIX: Updated color constants to better match the design.
+  static const Color primaryTextColor = Color(0xFF212121);
   static const Color secondaryTextColor = Colors.grey;
+  static const Color appPrimaryColor = Color(0xFF3A5B43);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final medicineAsyncValue = ref.watch(medicineDataProvider);
     final today = DateTime.now();
-
-    final cardBorder = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16.0),
-      side: BorderSide(color: Colors.grey.shade300),
-    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -40,8 +39,8 @@ class HomeScreen extends ConsumerWidget {
               _buildHeader(context, medicineAsyncValue, today),
               const SizedBox(height: 24),
 
-              // --- Metrics Card ---
-              _buildMetricsCard(context),
+              // --- Metrics Card (Now a slider) ---
+              const MetricsSliderCard(), // Replaced static card with slider
               const SizedBox(height: 24),
 
               // --- Upcoming Medicine ---
@@ -59,7 +58,7 @@ class HomeScreen extends ConsumerWidget {
               // --- Quick Actions ---
               _buildSectionTitle(context, "Quick Actions"),
               const SizedBox(height: 16),
-              _buildQuickActions(context, cardBorder),
+              _buildQuickActions(context),
               const SizedBox(height: 20),
             ],
           ),
@@ -84,7 +83,11 @@ class HomeScreen extends ConsumerWidget {
             children: [
               const Text(
                 "Hello, Jayasree", // Placeholder name
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: primaryTextColor,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -97,15 +100,13 @@ class HomeScreen extends ConsumerWidget {
           ),
           GestureDetector(
             onTap: () {
-              // This is where you put the code that runs when the avatar is tapped.
-              // For example, you could navigate to a profile screen.
-              context.go('/settings'); // Example route
-              print('Avatar tapped!');
+              // Navigate to settings or profile screen
+              context.go('/settings');
             },
-            child: const CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.grey,
-              // child: Icon(Icons.person, color: Colors.white), // Or an image
+            child: CircleAvatar(
+              radius: 30,
+              backgroundColor: Colors.grey.shade200,
+              child: const Icon(Icons.person, size: 30, color: Colors.black54),
             ),
           ),
         ],
@@ -115,81 +116,14 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetricsCard(BuildContext context) {
-    // This is a placeholder for the card with a PageView
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: const Color(0xFFF8F8F8),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "122/80",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text("mmHg", style: TextStyle(color: secondaryTextColor)),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.circle, color: Colors.green, size: 12),
-                        SizedBox(width: 4),
-                        Text("Normal", style: TextStyle(color: Colors.green)),
-                      ],
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.star, color: Colors.orange, size: 12),
-                        SizedBox(width: 4),
-                        Text(
-                          "Excellent",
-                          style: TextStyle(color: Colors.orange),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.favorite, color: Colors.red),
-                  label: const Text("Heart Rate"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Last updated: 2 min ago",
-              style: TextStyle(color: secondaryTextColor, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: primaryTextColor,
+      ),
     );
   }
 
@@ -220,13 +154,25 @@ class HomeScreen extends ConsumerWidget {
     bool isTaken,
   ) {
     return ListTile(
-      leading: Icon(
-        isTaken ? Icons.check_circle : Icons.radio_button_unchecked,
-        color: isTaken ? Colors.green : Colors.grey,
+      contentPadding: EdgeInsets.only(left: 20, right: 20),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+        side: BorderSide(color: Colors.grey.shade300),
       ),
-      title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(time),
-      trailing: const Icon(Icons.medication, color: Colors.orangeAccent),
+      leading: FaIcon(
+        isTaken ? FontAwesomeIcons.circleCheck : FontAwesomeIcons.circle,
+        color: isTaken ? const Color(0xFF3A5B43) : Colors.grey,
+        size: 28,
+      ),
+      title: Text(
+        name,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: primaryTextColor,
+        ),
+      ),
+      subtitle: Text(time, style: const TextStyle(color: secondaryTextColor)),
+      trailing: const FaIcon(FontAwesomeIcons.pills, color: Color(0xFF3A5B43)),
       onTap: () {},
     );
   }
@@ -260,20 +206,28 @@ class HomeScreen extends ConsumerWidget {
         CircleAvatar(
           radius: 30,
           backgroundColor: isAddButton
-              ? Colors.blue.shade50
-              : Colors.purple.shade50,
+              ? const Color(0xFFE3F2FD)
+              : const Color(0xFFF3E5F5),
           child: isAddButton
-              ? Icon(Icons.add, color: Colors.blue.shade800, size: 30)
+              ? const Icon(Icons.add, color: Color(0xFF1565C0), size: 30)
               : Text(
                   initials ?? "",
-                  style: TextStyle(
-                    color: Colors.purple.shade800,
+                  style: const TextStyle(
+                    color: Color(0xFF6A1B9A),
                     fontWeight: FontWeight.bold,
+                    fontSize: 18,
                   ),
                 ),
         ),
         const SizedBox(height: 8),
-        Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: primaryTextColor,
+          ),
+        ),
+        if (updated == null) const SizedBox(height: 16),
         if (updated != null)
           Text(
             "Updated $updated",
@@ -283,7 +237,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context, ShapeBorder cardShape) {
+  Widget _buildQuickActions(BuildContext context) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -303,7 +257,7 @@ class HomeScreen extends ConsumerWidget {
           "Upload Reports",
           Icons.file_upload_outlined,
           () => context.go('/reports'),
-        ), // Placeholder route
+        ),
         _buildActionCard(
           context,
           "Track Metrics",
@@ -332,15 +286,232 @@ class HomeScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16.0),
         side: BorderSide(color: Colors.grey.shade200),
       ),
+      color: const Color(0xFFF9F9F9),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: Theme.of(context).colorScheme.primary),
+            Icon(icon, size: 40, color: appPrimaryColor),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: primaryTextColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- Metrics Slider Card Widget ---
+
+class MetricsSliderCard extends StatefulWidget {
+  const MetricsSliderCard({super.key});
+
+  @override
+  State<MetricsSliderCard> createState() => _MetricsSliderCardState();
+}
+
+class _MetricsSliderCardState extends State<MetricsSliderCard> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  Timer? _timer;
+
+  // Dummy data for the slider
+  final List<Widget> _metricPages = [
+    _buildMetricPage(
+      "122/80",
+      "mmHg",
+      "Normal",
+      "Excellent",
+      "Last updated: 2 min ago",
+    ),
+    _buildMetricPage("98", "bpm", "Resting", "Good", "Last updated: 5 min ago"),
+    _buildMetricPage(
+      "105",
+      "mg/dL",
+      "Fasting",
+      "Normal",
+      "Last updated: 1 day ago",
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Start a timer to auto-scroll the PageView
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      if (_currentPage < _metricPages.length - 1) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
+      }
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeIn,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+        side: BorderSide(color: Color(0xFFDAD7CD), width: 2.0),
+      ),
+      color: const Color(0xFFDAD7CD).withValues(alpha: 0.2),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 125, // Fixed height for the PageView
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _metricPages.length,
+                itemBuilder: (context, index) {
+                  return _metricPages[index];
+                },
+                onPageChanged: (int page) {
+                  setState(() {
+                    _currentPage = page;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Page indicators
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_metricPages.length, (index) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                  height: 8.0,
+                  width: _currentPage == index ? 24.0 : 8.0,
+                  decoration: BoxDecoration(
+                    color: _currentPage == index
+                        ? HomeScreen.appPrimaryColor
+                        : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Static helper to build a single metric page
+  static Widget _buildMetricPage(
+    String value,
+    String unit,
+    String status1,
+    String status2,
+    String lastUpdated,
+  ) {
+    return Container(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: HomeScreen.primaryTextColor,
+                      ),
+                    ),
+                    Text(
+                      unit,
+                      style: const TextStyle(
+                        color: HomeScreen.secondaryTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.circle,
+                          color: Color(0xFF4CAF50),
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          status1,
+                          style: const TextStyle(color: Color(0xFF4CAF50)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          color: Color(0xFFFFC107),
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          status2,
+                          style: const TextStyle(color: Color(0xFFFFC107)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.favorite, color: Colors.redAccent),
+                  label: const Text("Heart Rate"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 1,
+                    shadowColor: Colors.grey.withOpacity(0.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              lastUpdated,
+              style: const TextStyle(
+                color: HomeScreen.secondaryTextColor,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ),

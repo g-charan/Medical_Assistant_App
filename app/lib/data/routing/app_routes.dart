@@ -78,6 +78,7 @@ final List<AppRouteConfig> appRouteConfigs = [
   ),
   AppRouteConfig(
     path: '/ai',
+    usesShell: false,
     // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
       return const ArtificialIntelligenceScreen();
@@ -92,6 +93,7 @@ final List<AppRouteConfig> appRouteConfigs = [
   ),
   AppRouteConfig(
     path: '/settings',
+    usesShell: false,
     // FIX: Explicitly define the return type as Widget.
     builder: (BuildContext context, GoRouterState state) {
       return const SettingsScreen();

@@ -4,6 +4,7 @@ import 'package:app/data/presentation/widgets/utils/app_refresher.dart';
 import 'package:app/data/presentation/widgets/utils/async_value_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart'; // FIX: Added go_router import
 import 'package:intl/intl.dart'; // Import for date formatting
 
@@ -32,6 +33,7 @@ class FamilyScreen extends ConsumerWidget {
               AsyncValueWidget(
                 value: asyncFamilyData,
                 // The `data` callback now correctly handles the dynamic list from the provider.
+                loading: () => const Center(child: CircularProgressIndicator()),
                 data: (familyMembers) =>
                     _buildFamilyMemberList(context, familyMembers as List),
                 error: (err, stack) => Center(
@@ -78,10 +80,10 @@ class FamilyScreen extends ConsumerWidget {
         ),
         ElevatedButton.icon(
           onPressed: () {},
-          icon: const Icon(Icons.add),
-          label: const Text("Add Member"),
+          icon: const FaIcon(FontAwesomeIcons.plus),
+          label: const Text("Add"),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF388E3C),
+            backgroundColor: const Color(0xFF3A5A40),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -97,8 +99,8 @@ class FamilyScreen extends ConsumerWidget {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
       childAspectRatio: 2.5,
       children: [
         _buildStatCard("5", "Family Members"),
@@ -111,10 +113,11 @@ class FamilyScreen extends ConsumerWidget {
 
   Widget _buildStatCard(String value, String label, {Color? valueColor}) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Color(0xFFDAD7CD).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Color(0xFFDAD7CD), width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,52 +140,48 @@ class FamilyScreen extends ConsumerWidget {
     if (familyMembers.isEmpty) {
       return const Center(child: Text("No family members found."));
     }
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: ListView.separated(
-        itemCount: familyMembers.length,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        separatorBuilder: (context, index) =>
-            const Divider(height: 1, indent: 16),
-        itemBuilder: (context, index) {
-          final member = familyMembers[index];
-          final name = member.relatedUser.name ?? "No Name";
-          final updatedAt = DateFormat.yMMMd().format(
-            member.relatedUser.updatedAt,
-          );
+    return ListView.separated(
+      itemCount: familyMembers.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final member = familyMembers[index];
+        final name = member.relatedUser.name ?? "No Name";
+        final updatedAt = DateFormat.yMMMd().format(
+          member.relatedUser.updatedAt,
+        );
 
-          final initials = name.isNotEmpty
-              ? name.substring(0, 2).toUpperCase()
-              : "??";
-          final color = Colors.primaries[index % Colors.primaries.length];
+        final initials = name.isNotEmpty
+            ? name.substring(0, 2).toUpperCase()
+            : "??";
+        final color = Colors.primaries[index % Colors.primaries.length];
 
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: color.withOpacity(0.2),
-              child: Text(
-                initials,
-                style: TextStyle(color: color, fontWeight: FontWeight.bold),
-              ),
+        return ListTile(
+          tileColor: Color(0xFFDAD7CD).withValues(alpha: 0.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Color(0xFFDAD7CD), width: 1.0),
+          ),
+          leading: CircleAvatar(
+            backgroundColor: color.withOpacity(0.2),
+            child: Text(
+              initials,
+              style: TextStyle(color: color, fontWeight: FontWeight.bold),
             ),
-            title: Text(
-              name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text("Updated on $updatedAt"),
-            trailing: const Icon(Icons.chevron_right),
-            // FIX: Added navigation to the family member detail screen.
-            onTap: () {
-              context.go('/family/${member.relatedUser.id}');
-            },
-          );
-        },
-      ),
+          ),
+          title: Text(
+            name,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text("Updated on $updatedAt"),
+          trailing: const Icon(Icons.chevron_right),
+          // FIX: Added navigation to the family member detail screen.
+          onTap: () {
+            context.go('/family/${member.relatedUser.id}');
+          },
+        );
+      },
     );
   }
 
@@ -225,42 +224,41 @@ class FamilyScreen extends ConsumerWidget {
         "color": Colors.green,
       },
     ];
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        children: reminders.map((r) {
-          return ListTile(
-            leading: Icon(
-              Icons.notifications_active_outlined,
-              color: r['color'] as Color,
-            ),
-            title: Text(
-              r['name'] as String,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(r['task'] as String),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  r['time'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  r['priority'] as String,
-                  style: TextStyle(color: r['color'] as Color, fontSize: 12),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
+    return Column(
+      spacing: 8,
+      children: reminders.map((r) {
+        return ListTile(
+          tileColor: Color(0xFFDAD7CD).withValues(alpha: 0.2),
+
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Color(0xFFDAD7CD), width: 1.0),
+          ),
+          leading: Icon(
+            Icons.notifications_active_outlined,
+            color: r['color'] as Color,
+          ),
+          title: Text(
+            r['name'] as String,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(r['task'] as String),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                r['time'] as String,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                r['priority'] as String,
+                style: TextStyle(color: r['color'] as Color, fontSize: 12),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -292,36 +290,34 @@ class FamilyScreen extends ConsumerWidget {
         "time": "1 day ago",
       },
     ];
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        children: activities.map((a) {
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.grey.shade200,
-              child: Icon(
-                a['icon'] as IconData,
-                size: 20,
-                color: Colors.grey.shade700,
-              ),
+    return Column(
+      spacing: 8,
+      children: activities.map((a) {
+        return ListTile(
+          tileColor: Color(0xFFDAD7CD).withValues(alpha: 0.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Color(0xFFDAD7CD), width: 1.0),
+          ),
+          leading: CircleAvatar(
+            backgroundColor: Color(0xFFDAD7CD).withValues(alpha: 1),
+            child: Icon(
+              a['icon'] as IconData,
+              size: 20,
+              color: Colors.grey.shade700,
             ),
-            title: Text(
-              a['name'] as String,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(a['action'] as String),
-            trailing: Text(
-              a['time'] as String,
-              style: const TextStyle(fontSize: 12),
-            ),
-          );
-        }).toList(),
-      ),
+          ),
+          title: Text(
+            a['name'] as String,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(a['action'] as String),
+          trailing: Text(
+            a['time'] as String,
+            style: const TextStyle(fontSize: 12),
+          ),
+        );
+      }).toList(),
     );
   }
 
