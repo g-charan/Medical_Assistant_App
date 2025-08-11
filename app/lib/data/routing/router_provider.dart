@@ -1,6 +1,7 @@
 // lib/data/routing/router_provider.dart
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:app/data/presentation/providers/auth_provider.dart'; // Your auth provider
@@ -68,12 +69,20 @@ class AppShell extends StatelessWidget {
     return Scaffold(
       // FIX: Wrap the body with SafeArea to apply it to all screens in the shell.
       body: SafeArea(child: child),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.go('/ai'),
+        backgroundColor: Color(0xFF3A5B43),
+        child: const FaIcon(
+          FontAwesomeIcons.wandMagicSparkles,
+          color: Colors.white,
+        ),
+      ),
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(canvasColor: Colors.white),
         child: BottomNavigationBar(
           currentIndex: _calculateSelectedIndex(context),
           onTap: (int index) => _onItemTapped(index, context),
-          selectedItemColor: Theme.of(context).colorScheme.primary,
+          selectedItemColor: Color(0xFF344E41),
           unselectedItemColor: Colors.grey,
           showUnselectedLabels: true,
           showSelectedLabels: true,

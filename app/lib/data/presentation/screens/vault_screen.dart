@@ -10,6 +10,7 @@ import 'package:app/data/presentation/widgets/utils/app_refresher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
@@ -286,22 +287,6 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
         ),
         Row(
           children: [
-            IconButton.filled(
-              onPressed: _isProcessing ? null : _showAddOptions,
-              icon: _isProcessing
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.add),
-              style: IconButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-              ),
-            ),
             const SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: () {},
@@ -321,6 +306,20 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
                 foregroundColor: Colors.black,
                 side: BorderSide(color: Colors.grey.shade300),
               ),
+            ),
+            IconButton.filled(
+              onPressed: _isProcessing ? null : _showAddOptions,
+              icon: _isProcessing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.add),
+              style: IconButton.styleFrom(backgroundColor: Color(0xFF344E41)),
             ),
           ],
         ),
@@ -358,7 +357,8 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
                             _itemsPerPage,
                             medicines.length - (_currentPage * _itemsPerPage),
                           ) -
-                          1)),
+                          1)) +
+                  32,
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: totalPages,
@@ -431,15 +431,17 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: Color(0xFFDAD7CD)),
       ),
-      color: const Color(0xFFFDFDFD),
+      color: const Color(0xFFDAD7CD).withValues(alpha: 0.2),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => context.go('/vault/$id'),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CircleAvatar(
                 backgroundColor: color.withOpacity(0.1),
@@ -495,7 +497,10 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.grey),
+                icon: const FaIcon(
+                  FontAwesomeIcons.squareArrowUpRight,
+                  color: Color(0xFF3A5B43),
+                ),
                 onPressed: () {},
               ),
             ],
@@ -564,7 +569,7 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
   Widget _buildFamilyListItem(String name, String updated) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: Color(0xFFDAD7CD).withValues(alpha: 0.2),
         child: const Icon(Icons.person, color: Colors.grey),
       ),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
