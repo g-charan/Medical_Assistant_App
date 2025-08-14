@@ -22,6 +22,26 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+@router.get("/chat/{medicine_id}", response_model=ai_schemas.ChatHistoryResponse)
+def get_chat_history(
+    medicine_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Retrieves the chat history for a specific medicine for the authenticated user.
+    """
+    chat_history_db = db.query(ai_models.AIChatHistory).filter(
+        ai_models.AIChatHistory.user_id == current_user.user_id,
+        ai_models.AIChatHistory.medicine_id == medicine_id
+    ).first()
+
+    if not chat_history_db:
+        # If no history exists, return an empty history
+        return ai_schemas.ChatHistoryResponse(history=[])
+    
+    return ai_schemas.ChatHistoryResponse(history=chat_history_db.history)
 
 @router.post("/chat", response_model=ai_schemas.ChatResponse)
 async def chat_with_ai(
