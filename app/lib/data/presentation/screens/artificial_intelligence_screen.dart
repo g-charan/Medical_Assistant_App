@@ -1,8 +1,11 @@
+import 'package:app/data/models/ai.models.dart';
+import 'package:app/data/presentation/providers/ai.providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-// Message model
+// Your ChatMessage and ChatConversation models remain here...
 class ChatMessage {
   final String text;
   final bool isUser;
@@ -17,7 +20,6 @@ class ChatMessage {
   });
 }
 
-// Chat conversation model
 class ChatConversation {
   final String id;
   final String title;
@@ -32,33 +34,43 @@ class ChatConversation {
   });
 }
 
-class ArtificialIntelligenceScreen extends StatefulWidget {
+class ArtificialIntelligenceScreen extends ConsumerStatefulWidget {
   const ArtificialIntelligenceScreen({super.key});
 
   @override
-  State<ArtificialIntelligenceScreen> createState() =>
+  ConsumerState<ArtificialIntelligenceScreen> createState() =>
       _ArtificialIntelligenceScreenState();
 }
 
 class _ArtificialIntelligenceScreenState
-    extends State<ArtificialIntelligenceScreen>
+    extends ConsumerState<ArtificialIntelligenceScreen>
     with TickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
-  List<ChatMessage> _messages = [];
+  // The list of messages is no longer needed here.
+  // List<ChatMessage> _messages = [];
+
+  // History management can remain as local state for this version.
   List<ChatConversation> _chatHistory = [];
   List<ChatConversation> _filteredChats = [];
   String? _currentChatId;
-  bool _isTyping = false;
   bool _showHistory = false;
 
   @override
   void initState() {
     super.initState();
     _loadChatHistory();
-    _startNewChat();
+
+    // This schedules your function to run right after the first frame is built,
+    // making it safe to modify providers.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Check if the provider's message list is empty BEFORE starting a new chat.
+      if (ref.read(chatProvider).messages.isEmpty) {
+        _startNewChat();
+      }
+    });
   }
 
   @override
@@ -69,8 +81,8 @@ class _ArtificialIntelligenceScreenState
     super.dispose();
   }
 
-  // Simulate loading chat history from backend
   void _loadChatHistory() {
+    // This would typically load from a database.
     setState(() {
       _chatHistory = [
         ChatConversation(
@@ -93,72 +105,35 @@ class _ArtificialIntelligenceScreenState
             ),
           ],
         ),
-        ChatConversation(
-          id: "chat_2",
-          title: "Cooking Recipes",
-          lastMessage: DateTime.now().subtract(const Duration(days: 1)),
-          messages: [
-            ChatMessage(
-              text: "Can you suggest a healthy breakfast recipe?",
-              isUser: true,
-              timestamp: DateTime.now().subtract(
-                const Duration(days: 1, hours: 1),
-              ),
-            ),
-            ChatMessage(
-              text:
-                  "Here's a great healthy breakfast: Overnight oats with berries, nuts, and honey. It's nutritious and easy to prepare!",
-              isUser: false,
-              timestamp: DateTime.now().subtract(const Duration(days: 1)),
-            ),
-          ],
-        ),
-        ChatConversation(
-          id: "chat_3",
-          title: "Programming Help",
-          lastMessage: DateTime.now().subtract(const Duration(days: 3)),
-          messages: [
-            ChatMessage(
-              text: "How do I optimize my Flutter app performance?",
-              isUser: true,
-              timestamp: DateTime.now().subtract(
-                const Duration(days: 3, hours: 2),
-              ),
-            ),
-            ChatMessage(
-              text:
-                  "Here are key Flutter optimization tips: Use const constructors, avoid rebuilding widgets unnecessarily, use ListView.builder for long lists, and profile your app regularly.",
-              isUser: false,
-              timestamp: DateTime.now().subtract(const Duration(days: 3)),
-            ),
-          ],
-        ),
       ];
       _filteredChats = List.from(_chatHistory);
     });
   }
 
   void _startNewChat() {
+    // Tell the provider to clear its state for a new chat.
+    ref.read(chatProvider.notifier).clearChat();
     setState(() {
       _currentChatId = "chat_${DateTime.now().millisecondsSinceEpoch}";
-      _messages = [];
       _showHistory = false;
     });
   }
 
   void _loadChat(ChatConversation chat) {
+    // Tell the provider to load the messages from the selected conversation.
+    ref.read(chatProvider.notifier).loadConversation(chat.messages);
     setState(() {
       _currentChatId = chat.id;
-      _messages = List.from(chat.messages);
       _showHistory = false;
     });
     _scrollToBottom();
   }
 
   void _saveCurrentChat() {
-    if (_messages.isNotEmpty && _currentChatId != null) {
-      // Generate title from first user message
-      String title = _messages.firstWhere((msg) => msg.isUser).text;
+    // Get the messages from the provider to save them.
+    final messages = ref.read(chatProvider).messages;
+    if (messages.isNotEmpty && _currentChatId != null) {
+      String title = messages.firstWhere((msg) => msg.isUser).text;
       if (title.length > 30) {
         title = "${title.substring(0, 30)}...";
       }
@@ -167,13 +142,11 @@ class _ArtificialIntelligenceScreenState
         id: _currentChatId!,
         title: title,
         lastMessage: DateTime.now(),
-        messages: List.from(_messages),
+        messages: List.from(messages),
       );
 
       setState(() {
-        // Remove existing chat with same ID if it exists
         _chatHistory.removeWhere((chat) => chat.id == _currentChatId);
-        // Add new chat at the beginning
         _chatHistory.insert(0, newChat);
         _filteredChats = List.from(_chatHistory);
       });
@@ -209,86 +182,25 @@ class _ArtificialIntelligenceScreenState
     setState(() {
       _chatHistory.removeWhere((chat) => chat.id == chatId);
       _filteredChats = List.from(_chatHistory);
-
-      // If deleted chat was current, start new chat
       if (_currentChatId == chatId) {
         _startNewChat();
       }
     });
   }
 
-  void _handleSendPressed() async {
+  void _handleSendPressed() {
     final String text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    // Add user message
-    final userMessage = ChatMessage(
-      text: text,
-      isUser: true,
-      timestamp: DateTime.now(),
-      id: "msg_${DateTime.now().millisecondsSinceEpoch}",
-    );
+    final medicineId = ref.read(medicineChatProvider).medicineId;
 
-    setState(() {
-      _messages.add(userMessage);
-      _isTyping = true;
-    });
+    // The UI's only job is to tell the notifier to send the message.
+    ref.read(chatProvider.notifier).sendMessage(text, medicineId);
 
     _textController.clear();
-    _scrollToBottom();
-
-    // Simulate AI response delay
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    // Generate mock AI response
-    final aiResponse = _generateMockResponse(text);
-    final aiMessage = ChatMessage(
-      text: aiResponse,
-      isUser: false,
-      timestamp: DateTime.now(),
-      id: "msg_${DateTime.now().millisecondsSinceEpoch}",
-    );
-
-    setState(() {
-      _messages.add(aiMessage);
-      _isTyping = false;
-    });
-
-    _scrollToBottom();
-
-    // Auto-save chat after each exchange
-    _saveCurrentChat();
-  }
-
-  String _generateMockResponse(String userInput) {
-    final responses = [
-      "That's an interesting question! Let me help you with that.",
-      "I understand what you're asking. Here's what I think...",
-      "Based on my knowledge, I can provide you with some insights on this topic.",
-      "Great question! This is something many people wonder about.",
-      "I'd be happy to help you understand this better.",
-    ];
-
-    final detailedResponses = {
-      "medicine":
-          "Here are some important points about medicine: Always follow your doctor's prescriptions, take medications at the right time, and never share prescription drugs with others.",
-      "health":
-          "Maintaining good health involves regular exercise, a balanced diet, adequate sleep, stress management, and regular medical check-ups.",
-      "ai":
-          "Artificial Intelligence is transforming many industries by automating tasks, providing insights from data, and enhancing human capabilities in various fields.",
-      "help":
-          "I'm here to assist you with any questions you might have. Feel free to ask about health, technology, general knowledge, or anything else!",
-    };
-
-    // Check for keywords in user input
-    final lowerInput = userInput.toLowerCase();
-    for (final keyword in detailedResponses.keys) {
-      if (lowerInput.contains(keyword)) {
-        return detailedResponses[keyword]!;
-      }
-    }
-
-    return "${responses[DateTime.now().millisecond % responses.length]} Your question was: \"$userInput\"";
+    // Save the chat after every exchange
+    // We add a small delay to allow the state to update before saving
+    Future.delayed(const Duration(milliseconds: 100), () => _saveCurrentChat());
   }
 
   void _scrollToBottom() {
@@ -305,6 +217,11 @@ class _ArtificialIntelligenceScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Listen for changes in the message list to trigger a scroll.
+    ref.listen(chatProvider.select((state) => state.messages.length), (_, __) {
+      _scrollToBottom();
+    });
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -312,7 +229,7 @@ class _ArtificialIntelligenceScreenState
           onPressed: () => context.go('/'),
         ),
         title: const Text(
-          "AI Assistant",
+          "AI Assistant (New Version)",
           style: TextStyle(color: Colors.black),
         ),
       ),
@@ -321,38 +238,38 @@ class _ArtificialIntelligenceScreenState
   }
 
   Widget _buildChatView() {
+    // Watch the provider to get the current state.
+    final chatState = ref.watch(chatProvider);
+    final messages = chatState.messages;
+    final isAiTyping = chatState.isLoading;
+
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Stack(
           children: [
             Column(
               children: [
-                // Header with controls
                 _buildChatHeader(),
                 const SizedBox(height: 16),
-                // Chat messages area
                 Expanded(
-                  child: _messages.isEmpty
+                  child: messages.isEmpty && !isAiTyping
                       ? _buildEmptyState()
                       : ListView.builder(
                           controller: _scrollController,
                           padding: const EdgeInsets.only(bottom: 80),
-                          itemCount: _messages.length + (_isTyping ? 1 : 0),
+                          itemCount: messages.length + (isAiTyping ? 1 : 0),
                           itemBuilder: (context, index) {
-                            if (_isTyping && index == _messages.length) {
+                            if (isAiTyping && index == messages.length) {
                               return _buildTypingIndicator();
                             }
-                            return _buildMessageBubble(_messages[index]);
+                            return _buildMessageBubble(messages[index]);
                           },
                         ),
                 ),
               ],
             ),
-            // Input area positioned at bottom
             _buildInputArea(),
           ],
         ),
@@ -360,10 +277,11 @@ class _ArtificialIntelligenceScreenState
     );
   }
 
+  // All of your other UI build methods remain unchanged.
+  // ... (omitted for brevity, but you must include them in your file)
   Widget _buildChatHeader() {
     return Row(
       children: [
-        // New Chat Button
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () {
@@ -383,7 +301,6 @@ class _ArtificialIntelligenceScreenState
           ),
         ),
         const SizedBox(width: 12),
-        // History Button
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _toggleHistory,
@@ -409,7 +326,6 @@ class _ArtificialIntelligenceScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               IconButton(
@@ -427,8 +343,6 @@ class _ArtificialIntelligenceScreenState
             ],
           ),
           const SizedBox(height: 16),
-
-          // Search bar
           TextField(
             controller: _searchController,
             onChanged: _searchChats,
@@ -450,8 +364,6 @@ class _ArtificialIntelligenceScreenState
             ),
           ),
           const SizedBox(height: 16),
-
-          // Chat list
           Expanded(
             child: _filteredChats.isEmpty
                 ? _buildEmptyHistoryState()

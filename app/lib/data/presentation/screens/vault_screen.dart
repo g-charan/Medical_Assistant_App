@@ -406,7 +406,7 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
             .primaries[(globalStartIndex + index) % Colors.primaries.length];
 
         return _buildMedicineListItem(
-          med.id,
+          med.medicine.medicineId,
           initials,
           name,
           med.notes,

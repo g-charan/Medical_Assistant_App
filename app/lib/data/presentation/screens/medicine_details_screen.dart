@@ -1,20 +1,24 @@
+import 'package:app/data/presentation/providers/ai.providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:go_router/go_router.dart';
 
-class MedicineDetailsScreen extends StatefulWidget {
+class MedicineDetailsScreen extends ConsumerStatefulWidget {
   final String medicineId;
 
   const MedicineDetailsScreen({super.key, required this.medicineId});
 
   @override
-  State<MedicineDetailsScreen> createState() => _MedicineDetailsScreenState();
+  ConsumerState<MedicineDetailsScreen> createState() =>
+      _MedicineDetailsScreenState();
 }
 
-class _MedicineDetailsScreenState extends State<MedicineDetailsScreen>
+class _MedicineDetailsScreenState extends ConsumerState<MedicineDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isSending = false;
 
   final _myController = TextEditingController();
 
@@ -35,7 +39,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen>
   @override
   Widget build(BuildContext context) {
     // Dummy data for demonstration
-
+    final medicineId = widget.medicineId;
     const medicineName = "Paracetamol 500mg";
 
     const genericName = "Acetaminophen";
@@ -141,7 +145,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen>
 
             const SizedBox(height: 20),
 
-            _buildAIAssistant(context),
+            _buildAIAssistant(context, ref, medicineId),
 
             const SizedBox(height: 20),
           ],
@@ -547,19 +551,22 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen>
     );
   }
 
-  Widget _buildAIAssistant(BuildContext context) {
+  Widget _buildAIAssistant(
+    BuildContext context,
+    WidgetRef ref,
+    String medicineId,
+  ) {
+    // Optional: Watch the current state if you need to display it
+    final medicineChatState = ref.watch(medicineChatProvider);
+
     return Container(
       padding: const EdgeInsets.all(12),
-
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-
         borderRadius: BorderRadius.circular(12),
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
           Row(
             children: [
@@ -571,33 +578,24 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen>
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
-
                   child: const Icon(
                     Icons.smart_toy_outlined,
-
                     color: Colors.white,
-
                     size: 24,
                   ),
                 ),
               ),
-
               const SizedBox(width: 12),
-
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-
                   children: [
                     Text(
                       "AI Medicine Assistant",
-
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-
                     Text(
                       "Ask questions about this medication",
-
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
@@ -605,8 +603,24 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen>
               ),
             ],
           ),
-
           const SizedBox(height: 12),
+
+          // Optional: Display current state for debugging
+          if (medicineChatState.medicineId.isNotEmpty ||
+              medicineChatState.query.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Text(
+                'Current: Medicine ID: ${medicineChatState.medicineId}, Query: ${medicineChatState.query}',
+                style: TextStyle(fontSize: 10, color: Colors.blue.shade700),
+              ),
+            ),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -615,45 +629,95 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen>
               Expanded(
                 child: TextField(
                   controller: _myController,
+                  enabled: !_isSending, // Disable text field while sending
                   onTapOutside: (event) => FocusScope.of(context).unfocus(),
-
                   decoration: InputDecoration(
-                    filled: true, // Fill the background with color
+                    filled: true,
                     fillColor: Colors.white,
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFF344E41)),
+                      borderSide: const BorderSide(color: Color(0xFF344E41)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFFDAD7CD)),
+                      borderSide: const BorderSide(color: Color(0xFFDAD7CD)),
                     ),
-                    hintText: "Ask about dosage, side effects an...",
+                    hintText: "Ask about dosage, side effects...",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFFDAD7CD)),
+                      borderSide: const BorderSide(color: Color(0xFFDAD7CD)),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 10,
-                    ), // Adjusted padding
+                    ),
                   ),
                 ),
               ),
+              GestureDetector(
+                onTap: _isSending
+                    ? null
+                    : () async {
+                        final query = _myController.text.trim();
+                        if (query.isEmpty) return;
 
-              Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF344E41),
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
+                        // 1. Show loading indicator and disable button
+                        setState(() {
+                          _isSending = true;
+                        });
+                        print("Send button tapped");
+                        print("Query: $query");
+                        print("Medicine ID: $medicineId");
+                        try {
+                          ref
+                              .read(medicineChatProvider.notifier)
+                              .updateMedicine(medicineId);
+                          // 2. Clear any previous chat state from the provider
+                          ref.read(chatProvider.notifier).clearChat();
 
-                  child: const FaIcon(
-                    FontAwesomeIcons.solidPaperPlane,
-                    color: Colors.white,
-                    size: 20,
+                          // 3. Call the powerful chat notifier and WAIT for the first response
+                          await ref
+                              .read(chatProvider.notifier)
+                              .sendMessage(query, medicineId);
+
+                          // 4. Once the first conversation turn is complete, navigate
+                          if (mounted) {
+                            context.go("/ai");
+                          }
+                        } finally {
+                          // 5. Always stop the loading indicator, even if an error occurs
+                          if (mounted) {
+                            setState(() {
+                              _isSending = false;
+                            });
+                            _myController.clear();
+                          }
+                        }
+                      },
+                child: Container(
+                  width: 50, // Give a fixed width
+                  height: 50, // Give a fixed height
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF344E41),
+                    shape: BoxShape.rectangle,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    // 6. Show a progress indicator when sending
+                    child: _isSending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.0,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const FaIcon(
+                            FontAwesomeIcons.solidPaperPlane,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                   ),
                 ),
               ),
