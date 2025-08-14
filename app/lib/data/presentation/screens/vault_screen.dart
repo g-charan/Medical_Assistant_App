@@ -1,18 +1,34 @@
 import 'dart:async';
+
 import 'dart:io';
+
 import 'dart:math';
 
+import 'package:app/data/models/ai.models.dart';
 import 'package:app/data/models/medicines.dart';
+
+import 'package:app/data/presentation/providers/ai.providers.dart';
+
 //Assuming your model is here
+
 import 'package:app/data/presentation/providers/family.providers.dart';
+
 import 'package:app/data/presentation/providers/medicines.provider.dart';
+
 import 'package:app/data/presentation/widgets/utils/app_refresher.dart';
+
 import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:go_router/go_router.dart';
+
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+
 import 'package:image_picker/image_picker.dart';
 
 class VaultScreen extends ConsumerStatefulWidget {
@@ -34,75 +50,236 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
     super.dispose();
   }
 
-  // --- Existing OCR and State Management Logic (Preserved) ---
+  // --- REWRITTEN: This method now correctly handles the async flow and calls the new dialog ---
   Future<void> _scanWithOCR() async {
     if (_isProcessing) return;
-    setState(() => _isProcessing = true);
 
-    TextRecognizer? textRecognizer;
     try {
+      setState(() => _isProcessing = true);
+
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 85,
-        maxWidth: 1920,
-        maxHeight: 1080,
       );
 
       if (image == null || !mounted) return;
 
-      final File imageFile = File(image.path);
-      if (!await imageFile.exists()) {
-        _showMessage('Error: Image file not found', isError: true);
-        return;
-      }
-
       _showMessage('📷 Processing image...', showProgress: true);
+
       final inputImage = InputImage.fromFilePath(image.path);
-      textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final textRecognizer = TextRecognizer(
+        script: TextRecognitionScript.latin,
+      );
       final RecognizedText recognizedText = await textRecognizer.processImage(
         inputImage,
       );
+      await textRecognizer.close();
 
+      final String rawText = recognizedText.text;
       if (!mounted) return;
-      await _handleOCRResult(recognizedText);
-      await imageFile.delete();
+
+      // Clean the text and trigger the AI analysis
+      final String cleanedText = _cleanOcrText(rawText);
+      if (cleanedText.isEmpty) {
+        _showMessage('📄 No relevant text detected.', isError: true);
+        return;
+      }
+
+      // Hide the "Processing..." message and show "Analyzing..."
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      _showMessage(
+        '🤖 Analyzing text with AI...',
+        showProgress: true,
+        duration: 15,
+      );
+
+      // Call the API and wait for the state to update
+      await ref.read(ocrResponseProvider.notifier).fetchAnalysis(cleanedText);
+
+      // Read the final state from the provider
+      final ocrResultState = ref.read(ocrResponseProvider);
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      if (ocrResultState.error == null && ocrResultState.name != null) {
+        _showAnalysisResultDialog(
+          OcrResponse(
+            name: ocrResultState.name!,
+            description:
+                ocrResultState.description ?? "No description provided.",
+          ),
+        );
+      } else {
+        _showMessage("❌ AI Analysis Failed.", isError: true);
+      }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('--- OCR ERROR --- \n$e\n$stackTrace\n----------------');
+        print('--- OCR ERROR --- \n$e\n$stackTrace');
       }
       if (mounted) {
         _showMessage('Error processing image: ${e.toString()}', isError: true);
       }
     } finally {
-      await textRecognizer?.close();
       if (mounted) {
         setState(() => _isProcessing = false);
       }
     }
   }
 
+  // --- NEW: A professional and clean dialog to display the AI results ---
+  void _showAnalysisResultDialog(OcrResponse result) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24),
+        contentPadding: const EdgeInsets.all(24),
+        actionsPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            const Text('AI Analysis Result'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "SUGGESTED MEDICINE NAME",
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  result.name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "AI-GENERATED DESCRIPTION",
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  result.description,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade800,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.inventory_2_outlined, size: 18),
+            label: const Text('Save to Vault'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              // This is your dummy function for the final step
+              _processMedicineText(result.name);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- UNCHANGED: All other methods remain the same ---
+
+  String _cleanOcrText(String rawText) {
+    const List<String> blocklist = [
+      'batch',
+      'b. no.',
+      'exp',
+      'mfg',
+      'date',
+      'price',
+      'm.r.p',
+      'rs.',
+      'doses',
+      'dose',
+      'metered',
+      'tablet',
+      'capsule',
+      'spray',
+      'nasal',
+      'for external use only',
+      'keep out of reach',
+      'schedule h',
+      'drug',
+      'licensed',
+      'marketed',
+      'company',
+      'limited',
+      'pvt',
+      'ltd',
+    ];
+    final lines = rawText.split('\n');
+    final List<String> cleanLines = [];
+    for (var line in lines) {
+      final trimmedLine = line.trim();
+      final lowerCaseLine = trimmedLine.toLowerCase();
+      if (trimmedLine.isEmpty) continue;
+      if (blocklist.any((keyword) => lowerCaseLine.contains(keyword))) continue;
+      final words = trimmedLine.split(' ');
+      bool hasJunkCode = words.any((word) {
+        final hasDigits = word.contains(RegExp(r'\d'));
+        final hasLetters = word.contains(RegExp(r'[a-zA-Z]'));
+        return hasDigits &&
+            hasLetters &&
+            !word.toLowerCase().contains(
+              RegExp(r'(\d+(mg|ml|mcg))|([a-z]\d+)'),
+            );
+      });
+      if (hasJunkCode) continue;
+      if (double.tryParse(trimmedLine) != null) continue;
+      cleanLines.add(trimmedLine);
+    }
+    return cleanLines.join(' ');
+  }
+
   Future<void> _handleOCRResult(RecognizedText recognizedText) async {
-    final String cleanText = recognizedText.text.trim();
-    if (cleanText.isEmpty) {
+    final String cleanedText = _cleanOcrText(recognizedText.text);
+    if (cleanedText.isEmpty) {
       _showMessage(
-        '📄 No text detected. Try:\n'
-        '• Better lighting\n'
-        '• Hold camera steady\n'
-        '• Get closer to text',
+        '📄 No text detected. Try:\n• Better lighting\n• Hold camera steady\n• Get closer to text',
         duration: 5,
       );
       return;
     }
-    final String preview = cleanText.length > 80
-        ? '${cleanText.substring(0, 80)}...'
-        : cleanText;
+    final String preview = cleanedText.length > 80
+        ? '${cleanedText.substring(0, 80)}...'
+        : cleanedText;
     _showMessage(
       '✅ Text recognized!\nPreview: $preview',
       duration: 6,
       action: SnackBarAction(
         label: 'View Full',
-        onPressed: () => _showFullTextDialog(cleanText),
+        onPressed: () => _showFullTextDialog(cleanedText),
       ),
     );
   }
@@ -138,19 +315,19 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
     );
   }
 
-  void _showFullTextDialog(String text) {
+  void _showFullTextDialog(String? text) {
     if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Recognized Text'),
+        title: const Text('Cleaned Text'),
         content: Container(
           width: double.maxFinite,
           constraints: const BoxConstraints(maxHeight: 400),
           child: SingleChildScrollView(
             child: SelectableText(
-              text,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+              text ?? 'No text available',
+              style: const TextStyle(fontSize: 16),
             ),
           ),
         ),
@@ -171,8 +348,8 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
     );
   }
 
-  void _processMedicineText(String text) {
-    if (kDebugMode) print('Processing medicine text: $text');
+  void _processMedicineText(String? text) {
+    if (kDebugMode) print('Processing cleaned medicine text: $text');
     _showMessage('🔄 Processing medicine information...');
   }
 
@@ -233,15 +410,12 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
   @override
   Widget build(BuildContext context) {
     final medicineAsyncValue = ref.watch(medicineDataProvider);
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: AppRefresher(
         onRefresh: () async {
           setState(() => _currentPage = 0);
-          if (_pageController.hasClients) {
-            _pageController.jumpToPage(0);
-          }
+          if (_pageController.hasClients) _pageController.jumpToPage(0);
           await Future.wait([
             ref.refresh(medicineDataProvider.future),
             ref.refresh(familyDataProvider.future),
@@ -256,9 +430,8 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
               _buildHeader(),
               const SizedBox(height: 20),
               medicineAsyncValue.when(
-                data: (List<Medicines> medicines) {
-                  return _buildPaginatedContent(medicines);
-                },
+                data: (List<Medicines> medicines) =>
+                    _buildPaginatedContent(medicines),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => Center(child: Text("Error: $err")),
               ),
@@ -297,16 +470,6 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
                 side: BorderSide(color: Colors.grey.shade300),
               ),
             ),
-            const SizedBox(width: 8),
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.swap_vert),
-              label: const Text("Sort"),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.black,
-                side: BorderSide(color: Colors.grey.shade300),
-              ),
-            ),
             IconButton.filled(
               onPressed: _isProcessing ? null : _showAddOptions,
               icon: _isProcessing
@@ -319,7 +482,9 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
                       ),
                     )
                   : const Icon(Icons.add),
-              style: IconButton.styleFrom(backgroundColor: Color(0xFF344E41)),
+              style: IconButton.styleFrom(
+                backgroundColor: const Color(0xFF344E41),
+              ),
             ),
           ],
         ),
@@ -336,54 +501,36 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
         ),
       );
     }
-
     final totalPages = (medicines.length / _itemsPerPage).ceil();
-    // FIX: Use an AnimatedBuilder to dynamically calculate the height of the PageView
-    return AnimatedBuilder(
-      animation: _pageController,
-      builder: (context, child) {
-        return Column(
-          children: [
-            SizedBox(
-              // Calculate height based on item size and count for the CURRENT page
-              height:
-                  (88.0 *
-                      min(
-                        _itemsPerPage,
-                        medicines.length - (_currentPage * _itemsPerPage),
-                      )) +
-                  (12.0 *
-                      (min(
-                            _itemsPerPage,
-                            medicines.length - (_currentPage * _itemsPerPage),
-                          ) -
-                          1)) +
-                  32,
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: totalPages,
-                onPageChanged: (page) {
-                  setState(() {
-                    _currentPage = page;
-                  });
-                },
-                itemBuilder: (context, pageIndex) {
-                  final startIndex = pageIndex * _itemsPerPage;
-                  final endIndex = min(
-                    startIndex + _itemsPerPage,
-                    medicines.length,
-                  );
-                  final pageItems = medicines.sublist(startIndex, endIndex);
-
-                  return _buildMedicineListPage(pageItems, startIndex);
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (totalPages > 1) _buildPagination(totalPages),
-          ],
-        );
-      },
+    final int itemsOnCurrentPage = min(
+      _itemsPerPage,
+      medicines.length - (_currentPage * _itemsPerPage),
+    );
+    final double pageViewHeight =
+        (88.0 * itemsOnCurrentPage) +
+        (12.0 * (itemsOnCurrentPage > 1 ? itemsOnCurrentPage - 1 : 0));
+    return Column(
+      children: [
+        SizedBox(
+          height: pageViewHeight + 32, // Added padding back
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: totalPages,
+            onPageChanged: (page) => setState(() => _currentPage = page),
+            itemBuilder: (context, pageIndex) {
+              final startIndex = pageIndex * _itemsPerPage;
+              final endIndex = min(
+                startIndex + _itemsPerPage,
+                medicines.length,
+              );
+              final pageItems = medicines.sublist(startIndex, endIndex);
+              return _buildMedicineListPage(pageItems, startIndex);
+            },
+          ),
+        ),
+        const SizedBox(height: 20),
+        if (totalPages > 1) _buildPagination(totalPages),
+      ],
     );
   }
 
@@ -404,7 +551,6 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
             : "??";
         final color = Colors
             .primaries[(globalStartIndex + index) % Colors.primaries.length];
-
         return _buildMedicineListItem(
           med.medicine.medicineId,
           initials,
@@ -425,23 +571,20 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
     String updated,
     Color color,
   ) {
-    // FIX: Removed fixed height SizedBox and let the Card manage its own size.
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Color(0xFFDAD7CD)),
+        side: const BorderSide(color: Color(0xFFDAD7CD)),
       ),
-      color: const Color(0xFFDAD7CD).withValues(alpha: 0.2),
+      color: const Color(0xFFDAD7CD).withOpacity(0.2),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => context.go('/vault/$id'),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CircleAvatar(
                 backgroundColor: color.withOpacity(0.1),
@@ -451,7 +594,6 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              // FIX: Wrapped the Column in an Expanded widget to prevent overflow.
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,21 +653,18 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
   }
 
   Widget _buildPagination(int totalPages) {
-    final bool canGoBack = _currentPage > 0;
-    final bool canGoForward = _currentPage < totalPages - 1;
-
+    final canGoBack = _currentPage > 0;
+    final canGoForward = _currentPage < totalPages - 1;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
           icon: const Icon(Icons.chevron_left),
           onPressed: canGoBack
-              ? () {
-                  _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut,
-                  );
-                }
+              ? () => _pageController.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                )
               : null,
         ),
         Text(
@@ -535,12 +674,10 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
         IconButton(
           icon: const Icon(Icons.chevron_right),
           onPressed: canGoForward
-              ? () {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut,
-                  );
-                }
+              ? () => _pageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                )
               : null,
         ),
       ],
@@ -569,7 +706,7 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
   Widget _buildFamilyListItem(String name, String updated) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Color(0xFFDAD7CD).withValues(alpha: 0.2),
+        backgroundColor: const Color(0xFFDAD7CD).withOpacity(0.2),
         child: const Icon(Icons.person, color: Colors.grey),
       ),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
