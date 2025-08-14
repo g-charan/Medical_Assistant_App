@@ -86,34 +86,166 @@ final remoteAiProvider = createServiceProvider(
   (dio) => RemoteServiceAi(dio: dio),
 );
 
-// 3. FutureProvider for fetching the Welcome data
-// It depends on remoteServiceMedicinesProvider to get the service instance.
-class AiUpdateNotifier extends AutoDisposeAsyncNotifier<AiResponse?> {
-  @override
-  Future<AiResponse?> build() async {
-    // Initial state is null, no response yet.
-    return null;
-  }
+class OcrText {
+  final String text;
 
-  Future<AiResponse> postPrompt(AiChat data) async {
-    state = const AsyncLoading();
-    try {
-      // Assuming your service now returns an AiResponse object
-      final AiResponse response = await ref
-          .read(remoteAiProvider)
-          .postChat(data);
-      state = AsyncData(response);
-      return response;
-    } catch (err, stack) {
-      state = AsyncError(err, stack);
-      rethrow;
-    }
+  OcrText({required this.text});
+
+  @override
+  String toString() => text;
+}
+
+// OCR state
+class OcrState {
+  final String rawText; // The original text from the camera
+  final OcrResponse? analysisResult; // The structured result from the AI
+  final bool isLoading;
+  final String? error;
+
+  OcrState({
+    this.rawText = "",
+    this.analysisResult,
+    this.isLoading = false,
+    this.error,
+  });
+
+  // Helper method to create a copy of the state with new values
+  OcrState copyWith({
+    String? rawText,
+    OcrResponse? analysisResult,
+    bool? isLoading,
+    String? error,
+    bool clearResult = false, // A flag to easily clear old results
+  }) {
+    return OcrState(
+      rawText: rawText ?? this.rawText,
+      analysisResult: clearResult
+          ? null
+          : analysisResult ?? this.analysisResult,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearResult ? null : error ?? this.error,
+    );
   }
 }
 
-final aiUpdateNotifierProvider =
-    AsyncNotifierProvider.autoDispose<AiUpdateNotifier, AiResponse?>(() {
-      return AiUpdateNotifier();
+class OcrNotifier extends StateNotifier<OcrState> {
+  final Ref _ref;
+  OcrNotifier(this._ref) : super(OcrState());
+
+  // Called when new text is scanned from the camera
+  void updateRawText(String newText) {
+    state = state.copyWith(rawText: newText, clearResult: true);
+  }
+
+  // This is the main method the UI will call to get the analysis.
+  // It now returns a structured OcrResponse object.
+  Future<OcrResponse?> postTextForAnalysis(String text) async {
+    // Set the state to loading and clear any old results
+    state = state.copyWith(isLoading: true, rawText: text, clearResult: true);
+
+    try {
+      // Call your AI service (assuming it's defined in another provider)
+      final OcrResponse response = await _ref
+          .read(remoteAiProvider)
+          .postOcr(Ocr(text: text));
+
+      // Update the state with the successful result and stop loading
+      state = state.copyWith(isLoading: false, analysisResult: response);
+
+      // Return the structured response for immediate use in the UI
+      return response;
+    } catch (e) {
+      final errorMessage = "Failed to analyze text. Please try again.";
+      // Update the state with an error message and stop loading
+      state = state.copyWith(isLoading: false, error: errorMessage);
+      print("Error during OCR analysis: $e");
+
+      // Return null to indicate failure
+      return null;
+    }
+  }
+
+  // Resets the state to its initial values
+  void reset() {
+    state = OcrState();
+  }
+}
+
+// --- 3. The Provider Definition ---
+// This is what the UI will use to access the OcrNotifier.
+final ocrProvider = StateNotifierProvider<OcrNotifier, OcrState>((ref) {
+  return OcrNotifier(ref);
+});
+
+class OcrResponseState {
+  final String? name;
+  final String? description;
+  final bool isLoading;
+  final String? error;
+
+  OcrResponseState({
+    this.name,
+    this.description,
+    this.isLoading = false,
+    this.error,
+  });
+
+  // Helper method to easily create a copy of the state with new values
+  OcrResponseState copyWith({
+    String? name,
+    String? description,
+    bool? isLoading,
+    String? error,
+  }) {
+    return OcrResponseState(
+      name: name ?? this.name,
+      description: description ?? this.description,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+}
+
+class OcrResponseNotifier extends StateNotifier<OcrResponseState> {
+  final Ref _ref;
+  OcrResponseNotifier(this._ref) : super(OcrResponseState());
+
+  /// Fetches the analysis from the API and updates the state.
+  Future<void> fetchAnalysis(String scannedText) async {
+    // Set the state to loading
+    state = OcrResponseState(isLoading: true);
+
+    try {
+      // Call your remote AI provider
+      final OcrResponse response = await _ref
+          .read(remoteAiProvider)
+          .postOcr(Ocr(text: scannedText));
+
+      // If successful, update the state with the name and description
+      state = OcrResponseState(
+        name: response.name,
+        description: response.description,
+        isLoading: false,
+      );
+    } catch (e) {
+      // If an error occurs, update the state with an error message
+      state = OcrResponseState(
+        isLoading: false,
+        error: "Failed to analyze text. Please try again.",
+      );
+      print("Error during OCR analysis: $e");
+    }
+  }
+
+  /// Resets the state to its initial values.
+  void reset() {
+    state = OcrResponseState();
+  }
+}
+
+final ocrResponseProvider =
+    StateNotifierProvider<OcrResponseNotifier, OcrResponseState>((ref) {
+      return OcrResponseNotifier(ref);
     });
 
 class ChatState {

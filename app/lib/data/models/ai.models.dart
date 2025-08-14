@@ -46,3 +46,42 @@ class AiResponse {
 
   Map<String, dynamic> toJson() => {"response": response};
 }
+
+// OCR Model
+Ocr ocrFromJson(String str) => Ocr.fromJson(json.decode(str));
+
+String ocrToJson(Ocr data) => json.encode(data.toJson());
+
+class Ocr {
+  String text;
+
+  Ocr({required this.text});
+
+  Ocr copyWith({String? text}) => Ocr(text: text ?? this.text);
+
+  factory Ocr.fromJson(Map<String, dynamic> json) => Ocr(text: json["text"]);
+
+  Map<String, dynamic> toJson() => {"text": text};
+}
+
+OcrResponse ocrResponseFromJson(String str) =>
+    OcrResponse.fromJson(json.decode(str));
+
+String ocrResponseToJson(OcrResponse data) => json.encode(data.toJson());
+
+class OcrResponse {
+  String name;
+  String description;
+
+  OcrResponse({required this.name, required this.description});
+
+  OcrResponse copyWith({String? name, String? description}) => OcrResponse(
+    name: name ?? this.name,
+    description: description ?? this.description,
+  );
+
+  factory OcrResponse.fromJson(Map<String, dynamic> json) =>
+      OcrResponse(name: json["name"], description: json["description"]);
+
+  Map<String, dynamic> toJson() => {"name": name, "description": description};
+}
