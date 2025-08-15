@@ -31,30 +31,113 @@ def make_chat_completion_request(model, messages, temperature=1.0):
 
 # --- Existing OCR Analysis Function ---
 def analyze_ocr_text(text: str) -> dict:
-    # ... (code for this function remains the same)
+    """
+    Analyze OCR text from medicine packaging and return consistent JSON structure.
+    """
     prompt = f"""
-    Analyze the following text from a medicine package...
+    Analyze the following text from a medicine package and respond in JSON format.
+    IMPORTANT: 
+    1. Provide all text responses in English language only.
+    2. Use EXACTLY this JSON structure (do not change field names):
+    {{
+        "analysis": {{
+            "product_name": "name of the medicine product",
+            "interpretation": "detailed description of what this medicine is used for and any important information"
+        }}
+    }}
+
     Text to analyze:
     ---
     {text}
     ---
+    
+    Respond with ONLY the JSON, no other text or formatting.
     """
-    messages = [{"role": "system", "content": "You are a helpful assistant that responds in JSON."}, {"role": "user", "content": prompt}]
+    
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that responds in JSON format only. Always use the exact field names requested."},
+        {"role": "user", "content": prompt}
+    ]
+    
     try:
-        response = make_chat_completion_request(MODEL, messages, temperature=0.2)
+        response = make_chat_completion_request(MODEL, messages, temperature=0.1)  # Lower temperature for consistency
         raw_text = response.choices[0].message.content
-        cleaned_text = raw_text.strip().strip("`").strip()
-        if cleaned_text.startswith("json"):
-            cleaned_text = cleaned_text[4:].strip()
-        return json.loads(cleaned_text)
+        
+        # Clean up the response
+        cleaned_text = raw_text.strip()
+        if cleaned_text.startswith("```json"):
+            cleaned_text = cleaned_text[7:]
+        if cleaned_text.endswith("```"):
+            cleaned_text = cleaned_text[:-3]
+        cleaned_text = cleaned_text.strip()
+        
+        # Parse JSON
+        result = json.loads(cleaned_text)
+        
+        # Validate structure and fix if needed
+        if "analysis" not in result:
+            # If structure is wrong, try to fix it
+            if "product_name" in result and "interpretation" in result:
+                result = {"analysis": result}
+            else:
+                raise ValueError("Invalid response structure from AI")
+        
+        # Ensure required fields exist
+        analysis = result["analysis"]
+        if "product_name" not in analysis:
+            analysis["product_name"] = "Unknown Medicine"
+        if "interpretation" not in analysis:
+            analysis["interpretation"] = "No description available"
+            
+        return result
+        
     except APIConnectionError as e:
         raise ValueError(f"Connection to AI service failed after multiple retries: {e}")
-    except (json.JSONDecodeError, IndexError):
-        raise ValueError(f"AI returned a non-JSON or empty response.")
+    except (json.JSONDecodeError, KeyError, ValueError) as e:
+        print(f"AI returned invalid JSON: {raw_text}")
+        # Return a fallback structure
+        return {
+            "analysis": {
+                "product_name": "Unknown Medicine", 
+                "interpretation": f"Could not analyze the provided text. Raw response: {str(e)[:100]}..."
+            }
+        }
 
 # --- Existing Chat Functions ---
 def start_chat_session(history):
     return history
+
+# from googletrans import Translator, LANGUAGES
+
+# # ... (keep all your other existing functions like analyze_ocr_text, send_message_to_ai, etc.)
+
+# def translate_to_english(text: str) -> str:
+#     """
+#     Detects the language of the text and translates it to English if it's not already English.
+#     Returns the original text if translation fails or if it's already English.
+#     """
+#     # Avoid errors with empty or whitespace-only strings
+#     if not text or not text.strip():
+#         return text
+
+#     try:
+#         translator = Translator()
+#         # Detect the language of the source text
+#         detected_lang = translator.detect(text).lang
+
+#         # Check if the detected language is supported and is not English ('en')
+#         if detected_lang in LANGUAGES and detected_lang != 'en':
+#             print(f"Detected language: {LANGUAGES.get(detected_lang, 'Unknown')}. Translating to English.")
+#             # Translate the text from the detected language to English
+#             translated_text = translator.translate(text, dest='en').text
+#             return translated_text
+#         else:
+#             # If it's already English or detection is uncertain, return the original text
+#             return text
+#     except Exception as e:
+#         print(f"An error occurred during translation: {e}")
+#         # Fallback to returning the original text in case of any API errors
+#         return text
 
 def send_message_to_ai(convo, prompt):
     # ... (code for this function remains the same)

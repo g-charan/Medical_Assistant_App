@@ -93,6 +93,7 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
         showProgress: true,
         duration: 15,
       );
+      print(cleanedText);
 
       // Call the API and wait for the state to update
       await ref.read(ocrResponseProvider.notifier).fetchAnalysis(cleanedText);
