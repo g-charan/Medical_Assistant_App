@@ -16,6 +16,8 @@ class File(Base):
     file_type = Column(String) # e.g., 'pdf', 'image', 'lab_report'
     description = Column(String)
     uploaded_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    file_hash = Column(String, unique=True, index=True) # The unique fingerprint
+    extracted_text = Column(String) # The content of the document
 
     # Define a relationship to easily access the owner's profile
     owner = relationship("Profile")

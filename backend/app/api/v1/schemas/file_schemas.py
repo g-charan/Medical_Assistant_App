@@ -24,3 +24,20 @@ class File(BaseModel):
 
     class Config:
         from_attributes = True
+        
+# Data the frontend sends to process a file
+class FileProcessRequest(BaseModel):
+    file_url: str
+    file_hash: str
+    file_type: Optional[str] = None
+    description: Optional[str] = None
+
+# Data the backend sends back after processing
+class FileProcessResponse(BaseModel):
+    file_id: uuid.UUID
+    extracted_text: str
+
+# Data the frontend sends to chat about a processed file
+class FileChatRequest(BaseModel):
+    file_id: uuid.UUID
+    prompt: str
