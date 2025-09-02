@@ -1,4 +1,4 @@
-import 'package:app/data/models/ai.models.dart';
+import 'package:app/features/ai/data/models/ai_model.dart';
 import 'package:app/features/ai/presentation/providers/ai_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:app/data/models/family.models.dart';
-import 'package:app/data/services/config.services.dart';
+import 'package:app/core/config/config.services.dart';
+import 'package:app/features/family/data/models/family_model.dart';
 import 'package:dio/dio.dart';
 
 final _url = "/relationships/";

@@ -1,6 +1,5 @@
 import 'package:app/core/utils/app_refresher.dart';
 import 'package:app/core/utils/async_value_widget.dart';
-import 'package:app/data/models/family.models.dart'; // Assuming your model is here
 import 'package:app/features/family/presentation/providers/family_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

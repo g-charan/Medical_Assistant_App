@@ -1,6 +1,6 @@
 // lib/providers/auth_provider.dart
 
-import 'package:app/data/services/auth.services.dart';
+import 'package:app/features/auth/data/datasources/login_remote_datasource.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -3,9 +3,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:app/core/utils/app_refresher.dart';
-import 'package:app/data/models/ai.models.dart';
-import 'package:app/data/models/medicines.dart';
+import 'package:app/features/ai/data/models/ai_model.dart';
+
 import 'package:app/features/ai/presentation/providers/ai_providers.dart';
+import 'package:app/features/auth/data/models/medicines.dart';
 import 'package:app/features/family/presentation/providers/family_providers.dart';
 import 'package:app/features/vault/presentation/providers/medicines_provider.dart';
 

@@ -1,6 +1,6 @@
 import 'package:app/core/utils/provider.utils.dart';
-import 'package:app/data/models/medicines.dart';
-import 'package:app/data/services/medicines.services.dart';
+import 'package:app/features/alerts/data/datasources/alerts_remote_datasource.dart';
+import 'package:app/features/auth/data/models/medicines.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // 1. Provider for the Dio instance (optional, but good for testing and global config)

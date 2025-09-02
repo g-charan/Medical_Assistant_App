@@ -1,6 +1,6 @@
 import 'package:app/core/utils/provider.utils.dart';
-import 'package:app/data/models/family.models.dart';
-import 'package:app/data/services/family.services.dart';
+import 'package:app/features/family/data/datasources/family_remote_datasource.dart';
+import 'package:app/features/family/data/models/family_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
 
 // 1. Provider for the Dio instance (optional, but good for testing and global config)

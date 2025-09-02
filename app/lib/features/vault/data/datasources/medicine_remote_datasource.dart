@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:app/data/models/medicines.dart';
-import 'package:app/data/services/config.services.dart';
+import 'package:app/core/config/config.services.dart';
+import 'package:app/features/auth/data/models/medicines.dart';
 import 'package:dio/dio.dart';
 
 final _url = "/medicines";

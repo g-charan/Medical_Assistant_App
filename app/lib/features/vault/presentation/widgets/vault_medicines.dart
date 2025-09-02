@@ -1,11 +1,10 @@
+import 'package:app/features/auth/data/models/medicines.dart';
 import 'package:app/features/vault/presentation/providers/medicines_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:uuid/uuid.dart';
-
-import 'package:app/data/models/medicines.dart';
 
 class VaultMedicines extends ConsumerStatefulWidget {
   const VaultMedicines({super.key});

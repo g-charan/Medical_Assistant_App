@@ -1,4 +1,4 @@
-import 'package:app/data/models/profile.models.dart';
+import 'package:app/features/settings/data/models/profile_model.dart';
 import 'package:app/features/settings/presentation/providers/profile_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

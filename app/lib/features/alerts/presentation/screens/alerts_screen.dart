@@ -1,9 +1,9 @@
+import 'package:app/features/alerts/data/models/alert_models.dart';
 import 'package:app/features/alerts/presentation/widgets/custom_accordion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 // Import your new data models
-import 'package:app/data/models/alert_models.dart'; // Make sure this path is correct!
 // Import your CustomAccordion (assuming its path is correct)
 
 // --- MAIN ALERTS SCREEN ---

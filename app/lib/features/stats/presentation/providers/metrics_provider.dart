@@ -1,6 +1,6 @@
 import 'package:app/core/utils/provider.utils.dart';
-import 'package:app/data/models/metrics.model.dart';
-import 'package:app/data/services/metrics.services.dart';
+import 'package:app/features/stats/data/datasources/metrics_remote_datasource.dart';
+import 'package:app/features/stats/data/models/metrics_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // 1. Provider for the Dio instance (optional, but good for testing and global config)

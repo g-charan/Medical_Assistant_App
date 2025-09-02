@@ -1,8 +1,8 @@
 // ai.providers.dart
 import 'package:app/core/utils/provider.utils.dart';
-import 'package:app/data/models/ai.models.dart';
 import 'package:app/features/ai/ai.dart';
-import 'package:app/data/services/ai.services.dart';
+import 'package:app/features/ai/data/datasources/ai_remote_datasource.dart';
+import 'package:app/features/ai/data/models/ai_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // 1. Create a state class to hold both variables
