@@ -53,6 +53,7 @@ async def chat_with_ai(
     Handles a streaming chat request for a specific medicine.
     """
     medicine = db.query(medicine_models.Medicine).filter(medicine_models.Medicine.medicine_id == chat_request.medicine_id).first()
+    print(medicine.generic_name)
     if not medicine:
         raise HTTPException(status_code=404, detail="Medicine not found.")
 

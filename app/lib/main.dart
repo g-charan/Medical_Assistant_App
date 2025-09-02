@@ -1,10 +1,10 @@
-import 'package:app/data/presentation/providers/app_startup.provider.dart';
+import 'package:app/core/auth/app_startup_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:app/data/routing/router_provider.dart';
+import 'package:app/core/routing/router_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
