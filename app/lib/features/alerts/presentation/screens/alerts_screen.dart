@@ -1,583 +1,872 @@
-import 'package:app/features/alerts/data/models/alert_models.dart';
-import 'package:app/features/alerts/presentation/widgets/custom_accordion.dart';
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
-// Import your new data models
-// Import your CustomAccordion (assuming its path is correct)
+// --- Data Models for the Alerts Screen ---
+// Note: These models are defined here for a self-contained example.
+// In a real app, they would be in their own files.
 
-// --- MAIN ALERTS SCREEN ---
-class AlertsScreen extends StatelessWidget {
+enum AlertPriority { high, medium, low }
+
+class UpcomingAlert {
+  final String id;
+  final String medicineName;
+  final String patientName;
+  final String time;
+  final String dosage;
+  final String frequency;
+  final AlertPriority priority;
+  final IconData icon;
+
+  UpcomingAlert({
+    required this.id,
+    required this.medicineName,
+    required this.patientName,
+    required this.time,
+    required this.dosage,
+    required this.frequency,
+    required this.priority,
+    required this.icon,
+  });
+}
+
+// --- Main Alerts Screen Widget ---
+
+class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const AlertsPageStyled();
+  State<AlertsScreen> createState() => _AlertsScreenState();
+}
+
+class _AlertsScreenState extends State<AlertsScreen> {
+  int _selectedTabIndex = 0;
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  // Dynamic items per page based on screen size
+  int get _itemsPerPage {
+    final screenHeight = MediaQuery.of(context).size.height;
+    if (screenHeight > 800) return 4;
+    if (screenHeight > 600) return 3;
+    return 2;
   }
-}
 
-class AlertsPageStyled extends StatefulWidget {
-  const AlertsPageStyled({super.key});
-
-  @override
-  State<AlertsPageStyled> createState() => _AlertsPageStyledState();
-}
-
-class _AlertsPageStyledState extends State<AlertsPageStyled> {
-  late final PageController _upcomingDosePageController;
-  late final PageController _missedDosePageController;
-  late final PageController _refillAlertPageController;
-  late final PageController _expiryWarningsPageController;
-
-  int _currentUpcomingDosePageIndex = 0;
-  int _currentMissedDosePageIndex = 0;
-  int _currentRefillAlertPageIndex = 0;
-  int _currentExpiryWarningsPageIndex = 0;
-
-  final int _alertsPerPage = 5;
-
-  // --- CORRECT: Strongly Typed Dummy Data ---
-  final List<UpcomingDoseAlert> upcomingDoses = List.generate(
-    12,
-    (index) => UpcomingDoseAlert(
-      // <--- Create an instance of UpcomingDoseAlert
-      id: 'upc${index + 1}',
-      medicineName: 'Upcoming Med ${index + 1}',
-      patientName: ['Dad', 'Mom', 'Grandma', 'You', 'Child'][index % 5],
-      time: '${7 + index % 5}:00 PM',
-      details:
-          'Take with water after food. Check blood sugar before. This is an extended detail for Upcoming Med ${index + 1}.',
+  // --- Dummy Data ---
+  final List<UpcomingAlert> _upcomingDoses = [
+    UpcomingAlert(
+      id: '1',
+      medicineName: 'Metformin 500mg',
+      patientName: 'Jayasree Gutti',
+      time: '2:00 PM',
+      dosage: '500mg',
+      frequency: 'Twice daily',
+      priority: AlertPriority.high,
+      icon: Icons.medication,
     ),
-  );
-
-  final List<MissedDoseAlert> missedDoses = List.generate(
-    7,
-    (index) => MissedDoseAlert(
-      // <--- Create an instance of MissedDoseAlert
-      id: 'miss${index + 1}',
-      medicineName: 'Missed Med ${index + 1}',
-      patientName: ['Grandpa', 'You', 'Mom'][index % 3],
-      time: '${8 + index % 4}:00 AM',
-      details:
-          'This dose was crucial for daily energy levels. Consider taking it now if not too late, or double up tomorrow. If you are unsure, please consult your doctor or pharmacist. This is an extended detail for Missed Med ${index + 1}.',
+    UpcomingAlert(
+      id: '2',
+      medicineName: 'Lisinopril 10mg',
+      patientName: 'Charan Gutti',
+      time: '6:00 PM',
+      dosage: '10mg',
+      frequency: 'Once daily',
+      priority: AlertPriority.medium,
+      icon: Icons.medication,
     ),
-  );
-
-  final List<RefillAlert> refillAlerts = const [
-    RefillAlert(
-      // <--- Create an instance of RefillAlert
-      id: 'refill1',
-      medicineName: 'Amoxicillin',
-      shortDetail: 'Only 2 doses left. Order now!',
-      details:
-          'Stock is critically low. Expected delivery by 3 PM tomorrow if ordered immediately. Contact pharmacy directly for urgent refills. Check your prescription for renewal options.',
+    UpcomingAlert(
+      id: '3',
+      medicineName: 'Vitamin D3',
+      patientName: 'Priya Gutti',
+      time: '9:00 PM',
+      dosage: '1000 IU',
+      frequency: 'Once daily',
+      priority: AlertPriority.low,
+      icon: Icons.star,
     ),
-    RefillAlert(
-      id: 'refill2',
-      medicineName: 'Diabetic Strips',
-      shortDetail: 'Low stock. Reorder soon.',
-      details:
-          'You have less than a week\'s supply of test strips. Ensure continuous monitoring by reordering before running out. Check with your insurance provider for coverage.',
+    UpcomingAlert(
+      id: '4',
+      medicineName: 'Insulin Injection',
+      patientName: 'Meera Gutti',
+      time: '8:00 PM',
+      dosage: '10 units',
+      frequency: 'Before meals',
+      priority: AlertPriority.high,
+      icon: Icons.star,
     ),
-    RefillAlert(
-      id: 'refill3',
-      medicineName: 'Painkillers',
-      shortDetail: 'Running low.',
-      details:
-          'Only 15 pills remaining. Consider if you need a fresh prescription or over-the-counter purchase. Do not exceed the recommended daily dose.',
+    UpcomingAlert(
+      id: '5',
+      medicineName: 'Aspirin',
+      patientName: 'Jayasree Gutti',
+      time: '8:00 AM',
+      dosage: '81mg',
+      frequency: 'Once daily',
+      priority: AlertPriority.low,
+      icon: Icons.medication,
     ),
-    RefillAlert(
-      id: 'refill4',
-      medicineName: 'Thyroid Med',
-      shortDetail: 'Needs refill in 5 days',
-      details:
-          'Your prescription for Thyroid Med will expire soon. Please contact your doctor for a new prescription. It is vital to maintain consistent dosage for thyroid conditions.',
-    ),
-    RefillAlert(
-      id: 'refill5',
-      medicineName: 'Blood Pressure Med',
-      shortDetail: 'Reorder by next week',
-      details:
-          'Ensure you have enough supply. Consult your doctor for a refill prescription. Do not stop taking your blood pressure medication without medical advice.',
-    ),
-    RefillAlert(
-      id: 'refill6',
-      medicineName: 'Eye Drops',
-      shortDetail: 'Refill soon',
-      details:
-          'You are running low on eye drops. Please reorder to avoid discomfort. Check the type of eye drops required with your optometrist.',
+    UpcomingAlert(
+      id: '6',
+      medicineName: 'Atorvastatin',
+      patientName: 'Charan Gutti',
+      time: '9:00 PM',
+      dosage: '20mg',
+      frequency: 'Once daily',
+      priority: AlertPriority.medium,
+      icon: Icons.medication,
     ),
   ];
 
-  final List<ExpiryWarningAlert> expiryWarnings = const [
-    ExpiryWarningAlert(
-      // <--- Create an instance of ExpiryWarningAlert
-      id: 'exp1',
-      medicineName: 'Ibuprofen',
-      expiresIn: 'expires in 3 days',
-      details:
-          'Expired medication can be ineffective or harmful. Please dispose of properly at a designated medical waste facility and get a new pack. Do not flush down the toilet.',
-    ),
-    ExpiryWarningAlert(
-      id: 'exp2',
-      medicineName: 'Cetirizine',
-      expiresIn: 'expires in 7 days',
-      details:
-          'Ensure you finish this pack before it expires. If not, consider discarding remaining tablets safely. Check for any current allergies before continuing use.',
-    ),
-    ExpiryWarningAlert(
-      id: 'exp3',
-      medicineName: 'Cough Syrup',
-      expiresIn: 'expires in 10 days',
-      details:
-          'The effectiveness may decrease after expiry. It\'s recommended to replace it before then. Store in a cool, dry place away from direct sunlight.',
-    ),
-    ExpiryWarningAlert(
-      id: 'exp4',
-      medicineName: 'Antibiotic Cream',
-      expiresIn: 'Expires in 2 weeks',
-      details:
-          'Check the expiry date and replace if necessary. Avoid using expired topical creams as they may lose potency or cause skin irritation.',
-    ),
-  ];
+  // Placeholder lists for other tabs
+  final List<UpcomingAlert> _missedDoses = [];
+  final List<UpcomingAlert> _refills = [];
+  final List<UpcomingAlert> _expiries = [];
 
-  @override
-  void initState() {
-    super.initState();
-    _upcomingDosePageController = PageController();
-    _missedDosePageController = PageController();
-    _refillAlertPageController = PageController();
-    _expiryWarningsPageController = PageController();
+  List<UpcomingAlert> get _currentList {
+    switch (_selectedTabIndex) {
+      case 0:
+        return _upcomingDoses;
+      case 1:
+        return _missedDoses;
+      case 2:
+        return _refills;
+      case 3:
+        return _expiries;
+      default:
+        return _upcomingDoses;
+    }
+  }
+
+  String get _currentTabName {
+    switch (_selectedTabIndex) {
+      case 0:
+        return 'Upcoming Doses';
+      case 1:
+        return 'Missed Doses';
+      case 2:
+        return 'Refills';
+      case 3:
+        return 'Expiring';
+      default:
+        return 'Upcoming Doses';
+    }
   }
 
   @override
   void dispose() {
-    _upcomingDosePageController.dispose();
-    _missedDosePageController.dispose();
-    _refillAlertPageController.dispose();
-    _expiryWarningsPageController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
-
-  // int _calculateTotalPages<T>(List<T> alerts) {
-  //   if (alerts.isEmpty) return 0;
-  //   return (alerts.length / _alertsPerPage).ceil();
-  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: ListView(
-          physics: const ClampingScrollPhysics(),
-          children: AnimationConfiguration.toStaggeredList(
-            duration: const Duration(milliseconds: 375),
-            delay: const Duration(milliseconds: 100),
-            childAnimationBuilder: (widget) => SlideAnimation(
-              verticalOffset: 50.0,
-              child: FadeInAnimation(child: widget),
-            ),
-            children: [
-              const SizedBox(height: 8),
-
-              // --- Upcoming Dose Category ---
-              _AlertCategoryCard(
-                title: 'Upcoming Dose (${upcomingDoses.length} Alerts)',
-                alerts:
-                    upcomingDoses, // Now this will be List<UpcomingDoseAlert>
-                pageController: _upcomingDosePageController,
-                currentPageIndex: _currentUpcomingDosePageIndex,
-                alertsPerPage: _alertsPerPage,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentUpcomingDosePageIndex = index;
-                  });
-                },
-                itemBuilder: (context, alert) {
-                  final UpcomingDoseAlert typedAlert =
-                      alert as UpcomingDoseAlert;
-                  return CustomStyledAccordion(
-                    medicineName:
-                        '${typedAlert.medicineName} (${typedAlert.patientName})',
-                    medicineDetails: typedAlert.time,
-                    expandedContent: typedAlert.details,
-                    leadingWidget: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 2,
-                      ),
-                      child: Checkbox(
-                        value: false,
-                        onChanged: (bool? value) {
-                          // TODO: Implement logic to mark dose as taken
-                        },
-                        fillColor: WidgetStateProperty.resolveWith((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return Colors.green.shade600;
-                          }
-                          return Colors.grey.shade400;
-                        }),
-                        visualDensity: VisualDensity.compact,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                    actionText: 'Tap to mark as Taken',
-                    onActionPressed: () {
-                      // TODO: Implement action for Upcoming Dose
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // --- Missed Dose Category ---
-              _AlertCategoryCard(
-                title: 'Missed Dose (${missedDoses.length} Alerts)',
-                alerts: missedDoses, // Now this will be List<MissedDoseAlert>
-                pageController: _missedDosePageController,
-                currentPageIndex: _currentMissedDosePageIndex,
-                alertsPerPage: _alertsPerPage,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentMissedDosePageIndex = index;
-                  });
-                },
-                itemBuilder: (context, alert) {
-                  final MissedDoseAlert typedAlert = alert as MissedDoseAlert;
-                  return CustomStyledAccordion(
-                    medicineName:
-                        '${typedAlert.medicineName} (${typedAlert.patientName})',
-                    medicineDetails: typedAlert.time,
-                    expandedContent: typedAlert.details,
-                    leadingWidget: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      padding: const EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.watch_later_outlined,
-                        color: Colors.red.shade700,
-                        size: 20,
-                      ),
-                    ),
-                    actionText: 'Reschedule | Mark as Skipped',
-                    onActionPressed: () {
-                      // TODO: Implement action for Missed Dose
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // --- Refill Alert Category ---
-              _AlertCategoryCard(
-                title: 'Refill Alert (${refillAlerts.length})',
-                alerts: refillAlerts, // Now this will be List<RefillAlert>
-                pageController: _refillAlertPageController,
-                currentPageIndex: _currentRefillAlertPageIndex,
-                alertsPerPage: _alertsPerPage,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentRefillAlertPageIndex = index;
-                  });
-                },
-                itemBuilder: (context, alert) {
-                  final RefillAlert typedAlert = alert as RefillAlert;
-                  return CustomStyledAccordion(
-                    medicineName: typedAlert.medicineName,
-                    medicineDetails: typedAlert.shortDetail,
-                    expandedContent: typedAlert.details,
-                    leadingWidget: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      padding: const EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.medication_liquid_outlined,
-                        color: Colors.orange.shade700,
-                        size: 20,
-                      ),
-                    ),
-                    actionText: 'Order Now | Add Refill',
-                    onActionPressed: () {
-                      // TODO: Implement action for Refill Alert
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // --- Expiry Warnings Category ---
-              _AlertCategoryCard(
-                title: 'Expiry Warnings (${expiryWarnings.length})',
-                alerts:
-                    expiryWarnings, // Now this will be List<ExpiryWarningAlert>
-                pageController: _expiryWarningsPageController,
-                currentPageIndex: _currentExpiryWarningsPageIndex,
-                alertsPerPage: _alertsPerPage,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentExpiryWarningsPageIndex = index;
-                  });
-                },
-                itemBuilder: (context, alert) {
-                  final ExpiryWarningAlert typedAlert =
-                      alert as ExpiryWarningAlert;
-                  return CustomStyledAccordion(
-                    medicineName: typedAlert.medicineName,
-                    medicineDetails: typedAlert.expiresIn,
-                    expandedContent: typedAlert.details,
-                    leadingWidget: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.yellow.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      padding: const EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.calendar_today_outlined,
-                        color: Colors.yellow.shade800,
-                        size: 20,
-                      ),
-                    ),
-                    actionText: 'View Details',
-                    onActionPressed: () {
-                      // TODO: Implement action for Expiry Warning
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // --- Add Custom Alert Button ---
-              _buildAddItemButton(
-                context,
-                title: 'Add Custom Alert',
-                icon: Icons.add_alert_outlined,
-                onTap: () {
-                  // TODO: Implement Add Custom Alert tap
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddItemButton(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.only(top: 2, bottom: 2),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.all(6),
-                child: Icon(
-                  icon,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).primaryColor,
+      backgroundColor: Colors.white,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return CustomScrollView(
+            slivers: [
+              _buildHeader(constraints),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _getHorizontalPadding(constraints),
+                    vertical: 20.0,
                   ),
+                  child: _buildFilterTabs(constraints),
                 ),
               ),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: Colors.grey,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _getHorizontalPadding(constraints),
+                  ),
+                  child: _buildContentHeader(),
+                ),
               ),
+              _buildAlertList(constraints),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
-}
 
-class _AlertCategoryCard<T extends AppAlert> extends StatelessWidget {
-  final String title;
-  final List<T> alerts;
-  final PageController pageController;
-  final int currentPageIndex;
-  final int alertsPerPage;
-  final ValueChanged<int> onPageChanged;
-  final Widget Function(BuildContext context, T alert) itemBuilder;
+  // --- Responsive Helper Methods ---
 
-  const _AlertCategoryCard({
-    super.key,
-    required this.title,
-    required this.alerts,
-    required this.pageController,
-    required this.currentPageIndex,
-    required this.alertsPerPage,
-    required this.onPageChanged,
-    required this.itemBuilder,
-  });
-
-  int get _totalPages {
-    if (alerts.isEmpty) return 0;
-    return (alerts.length / alertsPerPage).ceil();
+  double _getHorizontalPadding(BoxConstraints constraints) {
+    if (constraints.maxWidth > 1200) return 32.0;
+    if (constraints.maxWidth > 800) return 24.0;
+    return 16.0;
   }
 
-  final double _pageViewHeight =
-      320.0; // This value is an estimation and might need fine-tuning
+  double _getCardMargin(BoxConstraints constraints) {
+    if (constraints.maxWidth > 800) return 16.0;
+    return 12.0;
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+  // --- UI Builder Widgets ---
+
+  Widget _buildHeader(BoxConstraints constraints) {
+    final isWideScreen = constraints.maxWidth > 600;
+
+    return SliverAppBar(
+      backgroundColor: const Color(0xFF3A5B43),
+      toolbarHeight: 120.0,
+      automaticallyImplyLeading: false,
+      title: Padding(
+        padding: EdgeInsets.fromLTRB(
+          _getHorizontalPadding(constraints) - 16, // Subtract default padding
+          20,
+          0,
+          20,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Medicine Alerts",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: isWideScreen ? 24 : 22,
+              ),
             ),
+            const SizedBox(height: 6),
+            Text(
+              "Stay on track with your medication schedule",
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: isWideScreen ? 15 : 14,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        Container(
+          margin: const EdgeInsets.only(right: 4),
+          child: Chip(
+            avatar: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: Colors.amber,
+                shape: BoxShape.circle,
+              ),
+            ),
+            label: Text(
+              "${_upcomingDoses.length} active",
+              style: TextStyle(color: Color(0xFF3A5B43)),
+            ),
+            backgroundColor: Colors.white.withOpacity(0.2),
+            labelStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+            side: BorderSide.none,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
           ),
         ),
         Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200, width: 1),
-          ),
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              SizedBox(
-                height: _pageViewHeight,
-                child: PageView.builder(
-                  controller: pageController,
-                  itemCount: _totalPages,
-                  onPageChanged: onPageChanged,
-                  itemBuilder: (context, pageIndex) {
-                    final int startIndex = pageIndex * alertsPerPage;
-                    final int endIndex = (startIndex + alertsPerPage).clamp(
-                      0,
-                      alerts.length,
-                    );
-                    final List<T> currentAlerts = alerts.sublist(
-                      startIndex,
-                      endIndex,
-                    );
-
-                    return SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: Column(
-                        children: currentAlerts.map((alert) {
-                          return itemBuilder(context, alert);
-                        }).toList(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              _buildPageIndicatorWithArrows(
-                pageController: pageController,
-                currentPage: currentPageIndex,
-                totalPages: _totalPages,
-              ),
-            ],
+          margin: const EdgeInsets.only(right: 8),
+          child: IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.add_circle_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPageIndicatorWithArrows({
-    required PageController pageController,
-    required int currentPage,
-    required int totalPages,
-  }) {
-    if (totalPages <= 1) return const SizedBox.shrink();
+  Widget _buildFilterTabs(BoxConstraints constraints) {
+    final isWideScreen = constraints.maxWidth > 600;
 
+    if (isWideScreen) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildFilterChip(
+            0,
+            "Upcoming",
+            Icons.notifications_active_outlined,
+            constraints,
+          ),
+          _buildFilterChip(
+            1,
+            "Missed",
+            Icons.watch_later_outlined,
+            constraints,
+          ),
+          _buildFilterChip(
+            2,
+            "Refill",
+            Icons.medication_liquid_outlined,
+            constraints,
+          ),
+          _buildFilterChip(
+            3,
+            "Expiry",
+            Icons.calendar_today_outlined,
+            constraints,
+          ),
+        ],
+      );
+    } else {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.spaceEvenly,
+        children: [
+          _buildFilterChip(
+            0,
+            "Upcoming",
+            Icons.notifications_active_outlined,
+            constraints,
+          ),
+          _buildFilterChip(
+            1,
+            "Missed",
+            Icons.watch_later_outlined,
+            constraints,
+          ),
+          _buildFilterChip(
+            2,
+            "Refill",
+            Icons.medication_liquid_outlined,
+            constraints,
+          ),
+          _buildFilterChip(
+            3,
+            "Expiry",
+            Icons.calendar_today_outlined,
+            constraints,
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget _buildFilterChip(
+    int index,
+    String label,
+    IconData icon,
+    BoxConstraints constraints,
+  ) {
+    final isSelected = _selectedTabIndex == index;
+    final isCompact = constraints.maxWidth < 400;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTabIndex = index;
+          _currentPage = 0;
+          if (_pageController.hasClients) {
+            _pageController.jumpToPage(0);
+          }
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 8 : 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF3A5B43) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? null
+              : Border.all(color: Colors.grey.shade300, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.grey.shade700,
+              size: 18,
+            ),
+            SizedBox(width: isCompact ? 4 : 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w600,
+                fontSize: isCompact ? 12 : 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentHeader() {
     return Padding(
-      padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _currentTabName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "${_currentList.length} medications scheduled",
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          if (_currentList.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3A5B43),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                "${_currentList.length}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlertList(BoxConstraints constraints) {
+    if (_currentList.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.inbox_outlined,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "No alerts in this category",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final totalPages = (_currentList.length / _itemsPerPage).ceil();
+
+    return SliverToBoxAdapter(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: 400,
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: totalPages,
+                onPageChanged: (page) {
+                  setState(() {
+                    _currentPage = page;
+                  });
+                },
+                itemBuilder: (context, pageIndex) {
+                  final startIndex = pageIndex * _itemsPerPage;
+                  final endIndex = min(
+                    startIndex + _itemsPerPage,
+                    _currentList.length,
+                  );
+                  final pageItems = _currentList.sublist(startIndex, endIndex);
+
+                  return AnimationLimiter(
+                    child: ListView.builder(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: _getHorizontalPadding(constraints),
+                      ),
+                      itemCount: pageItems.length,
+                      itemBuilder: (context, index) {
+                        return AnimationConfiguration.staggeredList(
+                          position: index,
+                          duration: const Duration(milliseconds: 300),
+                          child: SlideAnimation(
+                            verticalOffset: 30.0,
+                            child: FadeInAnimation(
+                              child: _AlertCard(
+                                alert: pageItems[index],
+                                constraints: constraints,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (totalPages > 1) _buildPaginationControls(totalPages),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaginationControls(int totalPages) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            onPressed: currentPage > 0
-                ? () {
-                    pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    );
-                  }
+            onPressed: _currentPage > 0
+                ? () => _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  )
                 : null,
             icon: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 18,
-              color: currentPage > 0 ? Colors.black54 : Colors.grey.shade400,
+              Icons.arrow_back_ios,
+              size: 20,
+              color: _currentPage > 0
+                  ? const Color(0xFF3A5B43)
+                  : Colors.grey.shade400,
             ),
-            splashRadius: 20,
           ),
-          Text(
-            '${currentPage + 1} / $totalPages',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "${_currentPage + 1} of $totalPages",
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
           IconButton(
-            onPressed: currentPage < totalPages - 1
-                ? () {
-                    pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeIn,
-                    );
-                  }
+            onPressed: _currentPage < totalPages - 1
+                ? () => _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  )
                 : null,
             icon: Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 18,
-              color: currentPage < totalPages - 1
-                  ? Colors.black54
+              Icons.arrow_forward_ios,
+              size: 20,
+              color: _currentPage < totalPages - 1
+                  ? const Color(0xFF3A5B43)
                   : Colors.grey.shade400,
             ),
-            splashRadius: 20,
           ),
         ],
       ),
+    );
+  }
+}
+
+// --- Individual Alert Card Widget ---
+
+class _AlertCard extends StatelessWidget {
+  final UpcomingAlert alert;
+  final BoxConstraints constraints;
+
+  const _AlertCard({required this.alert, required this.constraints});
+
+  @override
+  Widget build(BuildContext context) {
+    final isWideScreen = constraints.maxWidth > 600;
+    final margin = constraints.maxWidth > 800 ? 16.0 : 12.0;
+
+    return Card(
+      margin: EdgeInsets.only(bottom: margin),
+      elevation: 2,
+      shadowColor: Colors.grey.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(isWideScreen ? 20.0 : 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildCardHeader(isWideScreen),
+            SizedBox(height: isWideScreen ? 16 : 12),
+            _buildDosageInfo(isWideScreen),
+            SizedBox(height: isWideScreen ? 20 : 16),
+            _buildActionButtons(context, isWideScreen),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardHeader(bool isWideScreen) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildMedicineIcon(),
+        SizedBox(width: isWideScreen ? 16 : 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                alert.medicineName,
+                style: TextStyle(
+                  fontSize: isWideScreen ? 18 : 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 12,
+                runSpacing: 4,
+                children: [
+                  _buildInfoChip(
+                    Icons.person_outline,
+                    alert.patientName,
+                    isWideScreen,
+                  ),
+                  _buildInfoChip(Icons.access_time, alert.time, isWideScreen),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        _buildPriorityChip(alert.priority, isWideScreen),
+      ],
+    );
+  }
+
+  Widget _buildInfoChip(IconData icon, String text, bool isWideScreen) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: isWideScreen ? 16 : 14, color: Colors.grey.shade600),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: isWideScreen ? 14 : 13,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMedicineIcon() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: const Color(0xFF3A5B43).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(alert.icon, color: const Color(0xFF3A5B43), size: 24),
+    );
+  }
+
+  Widget _buildPriorityChip(AlertPriority priority, bool isWideScreen) {
+    Color color;
+    String text;
+    switch (priority) {
+      case AlertPriority.high:
+        color = Colors.red.shade600;
+        text = "HIGH";
+        break;
+      case AlertPriority.medium:
+        color = Colors.orange.shade600;
+        text = "MEDIUM";
+        break;
+      case AlertPriority.low:
+        color = Colors.green.shade600;
+        text = "LOW";
+        break;
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isWideScreen ? 10 : 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: isWideScreen ? 11 : 10,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDosageInfo(bool isWideScreen) {
+    return Container(
+      padding: EdgeInsets.all(isWideScreen ? 16 : 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildDetailItem("Dosage", alert.dosage, isWideScreen),
+          ),
+          SizedBox(width: isWideScreen ? 24 : 16),
+          Expanded(
+            child: _buildDetailItem("Frequency", alert.frequency, isWideScreen),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value, bool isWideScreen) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: isWideScreen ? 13 : 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: isWideScreen ? 15 : 14,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, bool isWideScreen) {
+    if (constraints.maxWidth < 600) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () {},
+                  child: const Text("Details"),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {},
+                  child: const Text("Reschedule"),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade400),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.check, size: 18),
+              label: const Text("Mark as Taken"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3A5B43),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        TextButton(onPressed: () {}, child: const Text("View Details")),
+        const Spacer(),
+        OutlinedButton(
+          onPressed: () {},
+          child: const Text("Reschedule"),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: Colors.grey.shade400),
+          ),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.check, size: 18),
+          label: const Text("Mark Taken"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF3A5B43),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
