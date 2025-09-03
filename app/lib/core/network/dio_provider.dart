@@ -8,13 +8,13 @@ import 'dart:async';
 import 'dart:collection';
 
 // For physical device testing, use the local IP address of your machine
-const String BASE_URL = "http://192.168.0.173:8000/api/v1";
+// const String BASE_URL = "http://192.168.0.173:8000/api/v1";
 
 // Base URL configuration
 // const String BASE_URL = "http://10.0.2.2:8000/api/v1";
 
 // for mac
-// const String BASE_URL = "http://127.0.0.1:8000/api/v1";
+const String BASE_URL = "http://127.0.0.1:8000/api/v1";
 
 // Request limiter to prevent connection pool exhaustion
 class RequestLimiter extends Interceptor {
