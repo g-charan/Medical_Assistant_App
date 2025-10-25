@@ -14,3 +14,18 @@ class AIChatHistory(Base):
     history = Column(JSONB, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'))
     updated_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), onupdate=text('now()'))
+    
+
+class GeneralChatHistory(Base):
+    __tablename__ = "general_chat_histories"
+
+    history_id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    
+    # Link to the user, but not to any specific medicine
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
+    
+    # The full conversation history as JSON
+    history = Column(JSONB, nullable=False)
+    
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'))
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), onupdate=text('now()'))

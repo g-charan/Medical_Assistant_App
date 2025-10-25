@@ -30,3 +30,8 @@ class OcrRequest(BaseModel):
 class OcrResponse(BaseModel):
     name: str
     description: str
+    
+# --- Schemas for General Chat ---
+
+class GeneralChatRequest(BaseModel):
+    prompt: str
