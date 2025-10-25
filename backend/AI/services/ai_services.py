@@ -29,13 +29,13 @@ chat_generation_config = {
 
 # Initialize the model for OCR/JSON tasks
 json_model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-2.5-flash",
     generation_config=json_generation_config
 )
 
 # Initialize the model for chat tasks
 chat_model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-2.5-flash",
     generation_config=chat_generation_config
 )
 
