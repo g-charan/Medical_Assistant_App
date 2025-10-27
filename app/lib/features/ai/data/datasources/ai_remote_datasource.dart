@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:app/core/config/config.services.dart';
 import 'package:app/features/ai/data/models/ai_model.dart';
+import 'package:app/features/ai/data/models/general_ai_model.dart';
 import 'package:dio/dio.dart';
 
 final _url = "/ai";
@@ -33,6 +34,73 @@ class RemoteServiceAi extends ConfigServices {
       }
     } catch (e) {
       throw Exception("Unexpected error loading Ai: $e");
+    }
+  }
+
+  Future<GeneralAi> getGeneralAi() async {
+    try {
+      final response = await dio.get("$_url/general-chat");
+
+      if (response.statusCode == 200) {
+        final String json = jsonEncode(response.data);
+        return generalAiFromJson(json);
+      } else {
+        throw Exception("Failed to load General AI: ${response.statusCode}");
+      }
+    } on DioException catch (e) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          throw Exception("Connection timeout - server may be overloaded");
+        case DioExceptionType.receiveTimeout:
+          throw Exception("Server response timeout");
+        case DioExceptionType.connectionError:
+          throw Exception("Connection error - check your network");
+        case DioExceptionType.badResponse:
+          throw Exception("Server error: ${e.response?.statusCode}");
+        default:
+          throw Exception("Network error: ${e.message}");
+      }
+    } catch (e) {
+      throw Exception("Unexpected error loading General AI: $e");
+    }
+  }
+
+  Future<GeneralAiResponse> postGeneralChat(GeneralAiRequest data) async {
+    try {
+      final response = await dio.post(
+        "$_url/general-chat/",
+        data: {"prompt": data.prompt},
+      );
+
+      if (response.statusCode == 200) {
+        final String json = jsonEncode(response.data);
+        return generalAiResponseFromJson(json);
+      } else {
+        throw Exception("Failed to send message: ${response.statusCode}");
+      }
+    } on DioException catch (e) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          throw Exception("Connection timeout - server may be overloaded");
+        case DioExceptionType.receiveTimeout:
+          throw Exception("Server response timeout");
+        case DioExceptionType.connectionError:
+          throw Exception("Connection error - check your network");
+        case DioExceptionType.badResponse:
+          if (e.response?.statusCode == 400) {
+            throw Exception("Invalid message data provided");
+          } else if (e.response?.statusCode == 404) {
+            throw Exception("Chat endpoint not found");
+          } else {
+            throw Exception("Server error: ${e.response?.statusCode}");
+          }
+        case DioExceptionType.sendTimeout:
+          throw Exception("Upload timeout - check your connection");
+        default:
+          throw Exception("Network error: ${e.message}");
+      }
+    } catch (e) {
+      throw Exception("Unexpected error sending message: $e");
     }
   }
 

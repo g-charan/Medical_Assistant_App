@@ -1,4 +1,6 @@
+// Import the general AI model
 import 'package:app/features/ai/data/models/ai_model.dart';
+import 'package:app/features/ai/data/models/general_ai_model.dart' as general;
 import 'package:app/features/ai/presentation/providers/ai_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,11 +69,21 @@ class _ArtificialIntelligenceScreenState
     _loadChatHistory();
   }
 
+  // --- FIX 1: Corrected dispose method ---
   @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
     _searchController.dispose();
+
+    // This print log is fine.
+    print("--- AI Screen DISPOSING ---");
+
+    // DO NOT call ref.read here. It's redundant because the
+    // AppBar's onPressed button already does it, and it causes
+    // a "Bad state: Cannot use 'ref' after the widget was disposed" crash.
+    // ref.read(medicineChatProvider.notifier).reset(); // <--- REMOVED
+
     super.dispose();
   }
 
@@ -155,19 +167,44 @@ class _ArtificialIntelligenceScreenState
   // --- LIVE CHAT METHODS ---
 
   void _startNewChat() {
-    ref.read(chatProvider.notifier).clearChat();
+    final medicineId = ref.read(medicineIdProvider);
+    final bool isGeneralChat = medicineId.isEmpty;
+
+    if (isGeneralChat) {
+      ref.read(generalAiStateProvider.notifier).clearHistory();
+    } else {
+      ref.read(chatProvider.notifier).clearChat();
+    }
+
     setState(() {
       _currentChatId = "chat_${DateTime.now().millisecondsSinceEpoch}";
       _showHistory = false;
-      // Reset the flag to allow real history to be loaded if the user re-enters the screen
-      // or if you have logic to switch between different real chats.
+      // Reset the flag to allow real history to be loaded
       _isRealHistoryLoaded = false;
     });
   }
 
   // This loads messages from a selected dummy conversation into the live chat view.
   void _loadChat(ChatConversation chat) {
-    ref.read(chatProvider.notifier).loadConversation(chat.messages);
+    final medicineId = ref.read(medicineIdProvider);
+    final bool isGeneralChat = medicineId.isEmpty;
+
+    if (isGeneralChat) {
+      // Convert dummy ChatMessage list to general.History list
+      final generalHistory = chat.messages.map((msg) {
+        return general.History(
+          role: msg.isUser ? "user" : "model",
+          parts: [general.Part(text: msg.text)],
+        );
+      }).toList();
+      ref
+          .read(generalAiStateProvider.notifier)
+          .loadConversation(generalHistory);
+    } else {
+      // Medicine chat uses ChatMessage directly
+      ref.read(chatProvider.notifier).loadConversation(chat.messages);
+    }
+
     setState(() {
       _currentChatId = chat.id;
       _showHistory = false;
@@ -179,7 +216,26 @@ class _ArtificialIntelligenceScreenState
 
   // This saves the current live conversation back to the dummy list.
   void _saveCurrentChat() {
-    final messages = ref.read(chatProvider).messages;
+    final medicineId = ref.read(medicineIdProvider);
+    final bool isGeneralChat = medicineId.isEmpty;
+
+    List<ChatMessage> messages;
+
+    if (isGeneralChat) {
+      // Convert general.History list to dummy ChatMessage list
+      final history = ref.read(generalAiHistoryProvider);
+      messages = history.map((h) {
+        return ChatMessage(
+          text: h.parts.first.text,
+          isUser: h.role == 'user',
+          timestamp: DateTime.now(), // Placeholder timestamp
+        );
+      }).toList();
+    } else {
+      // Medicine chat uses ChatMessage directly
+      messages = ref.read(chatProvider).messages;
+    }
+
     if (messages.isNotEmpty && _currentChatId != null) {
       String title = messages
           .firstWhere((msg) => msg.isUser, orElse: () => messages.first)
@@ -206,7 +262,16 @@ class _ArtificialIntelligenceScreenState
     if (text.isEmpty) return;
 
     final medicineId = ref.read(medicineIdProvider);
-    ref.read(chatProvider.notifier).sendMessage(text, medicineId);
+    final bool isGeneralChat = medicineId.isEmpty;
+
+    if (isGeneralChat) {
+      // Use general AI provider
+      ref.read(generalAiStateProvider.notifier).sendMessage(text);
+    } else {
+      // Use medicine-specific AI provider
+      ref.read(chatProvider.notifier).sendMessage(text, medicineId);
+    }
+
     _textController.clear();
 
     Future.delayed(const Duration(milliseconds: 100), () => _saveCurrentChat());
@@ -231,46 +296,89 @@ class _ArtificialIntelligenceScreenState
     });
   }
 
+  // --- FIX 2: Corrected build method ---
   @override
   Widget build(BuildContext context) {
+    // This listener is for scrolling and works for both modes
     ref.listen(chatProvider.select((state) => state.messages.length), (_, __) {
+      _scrollToBottom();
+    });
+    // Add a scroll listener for general chat as well
+    ref.listen(generalAiHistoryProvider.select((history) => history.length), (
+      _,
+      __,
+    ) {
       _scrollToBottom();
     });
 
     final medicineId = ref.watch(medicineIdProvider);
-    final historyAsync = ref.watch(chatHistoryProvider(medicineId));
+    final bool isGeneralChat = medicineId.isEmpty;
 
-    // Listen to the REAL history provider to populate the initial chat view.
-    ref.listen<AsyncValue<HistoryResponse>>(chatHistoryProvider(medicineId), (
-      _,
-      next,
-    ) {
+    // --- FIX 2: This listener is now wrapped in a check ---
+    // Only listen to the medicine history provider if we are NOT in general chat.
+    // This prevents the listener from firing with an empty medicineId
+    // when the provider is reset, which caused the 405 error from your log.
+    if (!isGeneralChat) {
+      ref.listen<AsyncValue<HistoryResponse>>(chatHistoryProvider(medicineId), (
+        _,
+        next,
+      ) {
+        // This inner check is redundant now, but harmless.
+        if (isGeneralChat) return;
+
+        if (next is AsyncData && !_isRealHistoryLoaded) {
+          final historyData = next.value!.history;
+          final convertedMessages = historyData
+              .map(
+                (h) => ChatMessage(
+                  text: h.parts.first.text,
+                  isUser: h.role == 'user',
+                  timestamp: DateTime.now(), // Placeholder timestamp
+                ),
+              )
+              .toList();
+
+          ref.read(chatProvider.notifier).loadConversation(convertedMessages);
+          setState(() => _isRealHistoryLoaded = true);
+        }
+      });
+    }
+
+    // Listen to the REAL general history provider
+    ref.listen<AsyncValue<general.GeneralAi>>(generalAiProvider, (_, next) {
+      // Only run if we are in GENERAL chat mode
+      if (!isGeneralChat) return;
+
       if (next is AsyncData && !_isRealHistoryLoaded) {
         final historyData = next.value!.history;
-        final convertedMessages = historyData
-            .map(
-              (h) => ChatMessage(
-                text: h.parts.first.text,
-                isUser: h.role == 'user',
-                timestamp: DateTime.now(), // Placeholder timestamp
-              ),
-            )
-            .toList();
-
-        ref.read(chatProvider.notifier).loadConversation(convertedMessages);
+        // Load this into the GeneralAiNotifier
+        ref.read(generalAiStateProvider.notifier).loadConversation(historyData);
         setState(() => _isRealHistoryLoaded = true);
       }
     });
+
+    // Conditionally watch the correct provider for the initial loading screen
+    final AsyncValue<dynamic> historyAsync = isGeneralChat
+        ? ref.watch(generalAiProvider)
+        : ref.watch(chatHistoryProvider(medicineId));
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => context.go('/'),
+          // This onPressed logic is correct.
+          onPressed: () {
+            print(
+              "--- AI Screen Back Button TAPPED --- Resetting medicine provider.",
+            );
+            ref.read(medicineChatProvider.notifier).reset();
+            // Then navigate
+            context.go('/');
+          },
         ),
-        title: const Text(
-          "AI Assistant",
-          style: TextStyle(color: Colors.black),
+        title: Text(
+          isGeneralChat ? "General Assistant" : "AI Assistant",
+          style: const TextStyle(color: Colors.black),
         ),
       ),
       // The body now switches between the live chat and the dummy history list.
@@ -279,15 +387,32 @@ class _ArtificialIntelligenceScreenState
           : historyAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(child: Text('Error: $err')),
-              data: (_) => _buildChatView(),
+              // Pass the flag to _buildChatView
+              data: (_) => _buildChatView(isGeneralChat),
             ),
     );
   }
 
-  Widget _buildChatView() {
-    final chatState = ref.watch(chatProvider);
-    final messages = chatState.messages;
-    final isAiTyping = chatState.isLoading;
+  Widget _buildChatView(bool isGeneralChat) {
+    final List<ChatMessage> messages;
+    final bool isAiTyping;
+
+    if (isGeneralChat) {
+      final generalState = ref.watch(generalAiStateProvider);
+      isAiTyping = generalState.isLoading;
+      // Convert general.History to ChatMessage for rendering
+      messages = generalState.history.map((h) {
+        return ChatMessage(
+          text: h.parts.first.text,
+          isUser: h.role == 'user',
+          timestamp: DateTime.now(), // Placeholder for UI
+        );
+      }).toList();
+    } else {
+      final chatState = ref.watch(chatProvider);
+      messages = chatState.messages;
+      isAiTyping = chatState.isLoading;
+    }
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -310,6 +435,7 @@ class _ArtificialIntelligenceScreenState
                             if (isAiTyping && index == messages.length) {
                               return _buildTypingIndicator();
                             }
+                            // _buildMessageBubble accepts ChatMessage, which is why we converted
                             return _buildMessageBubble(messages[index]);
                           },
                         ),

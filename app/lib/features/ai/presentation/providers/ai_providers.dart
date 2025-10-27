@@ -1,8 +1,13 @@
-// ai.providers.dart
+// ai_providers.dart
+
 import 'package:app/core/utils/provider.utils.dart';
 import 'package:app/features/ai/ai.dart';
 import 'package:app/features/ai/data/datasources/ai_remote_datasource.dart';
 import 'package:app/features/ai/data/models/ai_model.dart';
+// Import the chat message model
+import 'package:app/features/ai/presentation/screens/artificial_intelligence_screen.dart'
+    show ChatMessage;
+import 'package:app/features/ai/data/models/general_ai_model.dart' as general;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // 1. Create a state class to hold both variables
@@ -17,6 +22,10 @@ final chatHistoryProvider = FutureProvider.family<HistoryResponse, String>((
   // Call the getHistory method and return the Future.
   // The FutureProvider will expose the result as an AsyncValue
   // to the UI, automatically handling loading/error states.
+  if (medicineId.isEmpty) {
+    // Avoid making a request with an empty ID
+    return Future.value(HistoryResponse(history: []));
+  }
   return aiService.getHistory(medicineId);
 });
 
@@ -345,4 +354,145 @@ class ChatNotifier extends StateNotifier<ChatState> {
 // 3. The provider that the UI will interact with
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
   return ChatNotifier(ref);
+});
+
+// FutureProvider for one-time fetch of general AI history
+final generalAiProvider = FutureProvider<general.GeneralAi>((ref) {
+  final aiService = ref.watch(remoteAiProvider);
+  return aiService.getGeneralAi();
+});
+
+// State management for General AI chat
+class GeneralAiState {
+  final List<general.History> history;
+  final bool isLoading;
+  final String? error;
+
+  GeneralAiState({this.history = const [], this.isLoading = false, this.error});
+
+  GeneralAiState copyWith({
+    List<general.History>? history,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+  }) {
+    return GeneralAiState(
+      history: history ?? this.history,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : error ?? this.error,
+    );
+  }
+}
+
+class GeneralAiNotifier extends StateNotifier<GeneralAiState> {
+  final Ref _ref;
+
+  GeneralAiNotifier(this._ref) : super(GeneralAiState());
+
+  // Load initial conversation history from server
+  Future<void> loadHistory() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final generalAi = await _ref.read(remoteAiProvider).getGeneralAi();
+
+      state = state.copyWith(history: generalAi.history, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: "Failed to load conversation history: $e",
+      );
+    }
+  }
+
+  // Add a new user message to the local history
+  void addUserMessage(String text) {
+    final userHistory = general.History(
+      role: "user",
+      parts: [general.Part(text: text)],
+    );
+
+    state = state.copyWith(history: [...state.history, userHistory]);
+  }
+
+  // Add a new model/assistant message to the local history
+  void addModelMessage(String text) {
+    final modelHistory = general.History(
+      role: "model",
+      parts: [general.Part(text: text)],
+    );
+
+    state = state.copyWith(history: [...state.history, modelHistory]);
+  }
+
+  // --- THIS IS THE FIXED METHOD ---
+  // Send a message and get AI response
+  Future<void> sendMessage(String prompt) async {
+    // 1. Add user message immediately to UI for responsiveness
+    addUserMessage(prompt);
+
+    // 2. Set loading state
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      // 3. Create request with just the prompt
+      final request = general.GeneralAiRequest(prompt: prompt);
+
+      // 4. POST the new message. We will ignore the response from this.
+      await _ref.read(remoteAiProvider).postGeneralChat(request);
+
+      // 5. GET the *entire* updated history from the server,
+      //    as you requested.
+      final generalAiHistory = await _ref.read(remoteAiProvider).getGeneralAi();
+
+      // 6. Update the local state with the complete, fresh history
+      //    from the server.
+      state = state.copyWith(
+        history: generalAiHistory.history,
+        isLoading: false,
+      );
+    } catch (e) {
+      // If anything fails, set the error state
+      state = state.copyWith(
+        isLoading: false,
+        error: "Failed to send message: $e",
+      );
+      // Optionally add an error message to the chat
+      addModelMessage("Sorry, an error occurred. Please try again.");
+    }
+  }
+
+  // Load a specific conversation
+  void loadConversation(List<general.History> history) {
+    state = GeneralAiState(history: history);
+  }
+
+  // Clear the conversation
+  void clearHistory() {
+    state = GeneralAiState();
+  }
+
+  // Reset to initial state
+  void reset() {
+    state = GeneralAiState();
+  }
+}
+
+// Provider for the General AI state
+final generalAiStateProvider =
+    StateNotifierProvider<GeneralAiNotifier, GeneralAiState>((ref) {
+      return GeneralAiNotifier(ref);
+    });
+
+// Helper providers to access specific parts of the state
+final generalAiHistoryProvider = Provider<List<general.History>>((ref) {
+  return ref.watch(generalAiStateProvider).history;
+});
+
+final generalAiLoadingProvider = Provider<bool>((ref) {
+  return ref.watch(generalAiStateProvider).isLoading;
+});
+
+final generalAiErrorProvider = Provider<String?>((ref) {
+  return ref.watch(generalAiStateProvider).error;
 });
