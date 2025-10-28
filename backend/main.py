@@ -1,7 +1,7 @@
 # In app/main.py
 from fastapi import FastAPI
 # Use relative imports for files within the same 'app' package
-from app.api.v1.routers import profiles, medicines, relationships, files, health_metrics
+from app.api.v1.routers import profiles, medicines, relationships, files, health_metrics,doses
 from AI.routers import ai, files_ai, general_chat # We will integrate the AI router correctly
 
 app = FastAPI(title="Medi Help API")
@@ -15,6 +15,7 @@ app.include_router(health_metrics.router, prefix="/api/v1/health_metrics", tags=
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI"])
 app.include_router(files_ai.router, prefix="/api/v1/ai/files", tags=["AI File Processing"])
 app.include_router(general_chat.router, prefix="/api/v1/ai/general-chat", tags=["AI General Chat"])
+app.include_router(doses.router, prefix="/api/v1/doses", tags=["Doses"])
 
 @app.get("/")
 def read_root():
