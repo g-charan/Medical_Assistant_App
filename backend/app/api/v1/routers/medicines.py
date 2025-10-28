@@ -8,6 +8,7 @@ from app.core.database import SessionLocal
 from app.api.v1.models import medicine_models
 from app.api.v1.schemas import medicine_schemas
 from app.api.v1.dependencies.auth import get_current_user, TokenData
+from app.api.v1.models import relationship_models
 
 router = APIRouter()
 
